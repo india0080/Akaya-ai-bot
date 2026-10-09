@@ -47,15 +47,14 @@ grocery-agent/
 │  │  ├─ services/quotes.ts        # quote job: ask every store in parallel, stream progress, optimize
 │  │  ├─ services/checkout.ts      # fill carts → "ready to pay" → hand-off → user-confirmed paid → tracking
 │  │  ├─ services/lists.ts         # saved lists, budgets, weekly schedules (IST), settings
-│  │  ├─ services/{cache,queue,notifications,db}.ts
 │  │  └─ routes/index.ts           # REST API (zod schemas → OpenAPI)
 │  └─ test/                        # vitest: parser, optimizer, schedule, providers, API flows
 ├─ frontend/src/
 │  ├─ screens/  Home · Items · Compare · Basket · Checkout · Order · Lists · Orders · Settings
-│  ├─ components/  VoiceSheet · ListSheet · StoreSheet · SubSheet · HandoffSheet · FeeTable · NotifBanner
-│  └─ ui/ theme/   Akaya UI kit (copied so this folder is self-contained)
+│  └─ components/  ListSheet · StoreSheet · SubSheet · HandoffSheet · FeeTable · NotifBanner
+│     (UI kit, VoiceSheet and HeadsUp come from @akaya/ui; cache, queue, notifications and the JSON store from @akaya/server-kit)
 ├─ docs/  ARCHITECTURE.md · API.md · PROVIDERS.md · openapi.json
-├─ docker-compose.yml · .env.example · package.json · scripts/dev.mjs
+├─ docker-compose.yml · .env.example · package.json · npm run dev (scripts/agent-dev.mjs at the repo root)
 ```
 
 ## Features

@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
+import { Screen, ScreenHeader, Icon } from '@akaya/ui';
 import { AppTile } from '../components/AppTile';
 import { useApp } from '../state/store';
+import { centerSelected } from '../lib/scroll';
 import {
   APPS,
   APP_BY_ID,
   CATEGORIES,
   KIND_LABEL,
+  connectedApps,
   POPULAR,
   type CategoryId,
   type IntegrationApp,
@@ -52,17 +52,9 @@ export function Apps() {
     else setParams(p, { replace: true });
   };
 
-  useEffect(() => {
-    const row = chipsRef.current;
-    const chip = row?.querySelector<HTMLElement>('.ap-chip.on');
-    if (row && chip)
-      row.scrollTo({ left: chip.offsetLeft - (row.clientWidth - chip.offsetWidth) / 2, behavior: 'smooth' });
-  }, [cat]);
+  useEffect(() => centerSelected(chipsRef.current, '.ap-chip.on'), [cat]);
 
-  const connected = Object.values(state.integrations)
-    .sort((a, b) => b.connectedAt - a.connectedAt)
-    .map((c) => APP_BY_ID[c.appId])
-    .filter(Boolean);
+  const connected = connectedApps(state.integrations);
   const needle = q.trim().toLowerCase();
   const list = APPS.filter(
     (a) =>

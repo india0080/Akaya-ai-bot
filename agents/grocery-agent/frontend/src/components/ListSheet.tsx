@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { api, type ListInput } from '../api/client';
 import type { SavedList, Schedule, Strategy } from '../api/types';
 import { DAYS, STRATEGY } from '../lib/format';
-import { Segmented, Toggle } from '../ui/Controls';
-import { Icon } from '../ui/Icon';
-import { Sheet } from '../ui/Sheet';
+import { Segmented, Toggle, Icon, Sheet } from '@akaya/ui';
 
 const EMOJI = ['🧺', '🥛', '🥗', '🍳', '🎉', '🍎', '🧹', '🍚'];
 const DEFAULT_SCHEDULE: Schedule = { enabled: true, days: [6], time: '09:00', strategy: 'cheapest', autoFill: true };
@@ -27,7 +25,13 @@ export function ListSheet({
   );
 }
 
-function ListForm({ initial, onDone }: { initial: Partial<SavedList> & { name: string; text: string }; onDone: (l: SavedList | null) => void }) {
+function ListForm({
+  initial,
+  onDone,
+}: {
+  initial: Partial<SavedList> & { name: string; text: string };
+  onDone: (l: SavedList | null) => void;
+}) {
   const [name, setName] = useState(initial.name);
   const [emoji, setEmoji] = useState(initial.emoji ?? '🧺');
   const [text, setText] = useState(initial.text);
@@ -40,7 +44,13 @@ function ListForm({ initial, onDone }: { initial: Partial<SavedList> & { name: s
   const save = async () => {
     setBusy(true);
     setErr('');
-    const body: ListInput = { name: name.trim() || 'My list', emoji, text: text.trim(), budget: Number(budget) || undefined, schedule: sched };
+    const body: ListInput = {
+      name: name.trim() || 'My list',
+      emoji,
+      text: text.trim(),
+      budget: Number(budget) || undefined,
+      schedule: sched,
+    };
     try {
       onDone(initial.id ? await api.updateList(initial.id, body) : await api.createList(body));
     } catch (e) {
@@ -69,7 +79,13 @@ function ListForm({ initial, onDone }: { initial: Partial<SavedList> & { name: s
       <textarea className="input" rows={3} value={text} onChange={(e) => setText(e.target.value)} />
       <label className="label">Budget (optional)</label>
       <div className="input rupee-in">
-        ₹<input inputMode="numeric" value={budget} onChange={(e) => setBudget(e.target.value.replace(/\D/g, ''))} placeholder="No limit" />
+        ₹
+        <input
+          inputMode="numeric"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value.replace(/\D/g, ''))}
+          placeholder="No limit"
+        />
       </div>
 
       <div className="sched-box card flat">
@@ -87,20 +103,36 @@ function ListForm({ initial, onDone }: { initial: Partial<SavedList> & { name: s
           <>
             <div className="days">
               {DAYS.map((d, i) => (
-                <button key={d} className={`chip${sched.days.includes(i) ? ' on' : ''}`} onClick={() => upd({ days: sched.days.includes(i) ? sched.days.filter((x) => x !== i) : [...sched.days, i].sort() })}>
+                <button
+                  key={d}
+                  className={`chip${sched.days.includes(i) ? ' on' : ''}`}
+                  onClick={() =>
+                    upd({
+                      days: sched.days.includes(i) ? sched.days.filter((x) => x !== i) : [...sched.days, i].sort(),
+                    })
+                  }
+                >
                   {d}
                 </button>
               ))}
             </div>
             <div className="sched-row">
               <span>Time</span>
-              <input className="input time-in" type="time" value={sched.time} onChange={(e) => upd({ time: e.target.value })} />
+              <input
+                className="input time-in"
+                type="time"
+                value={sched.time}
+                onChange={(e) => upd({ time: e.target.value })}
+              />
             </div>
             <Segmented<Strategy>
               className="mini"
               value={sched.strategy}
               onChange={(v) => upd({ strategy: v })}
-              options={(['cheapest', 'fastest', 'balanced'] as Strategy[]).map((s) => ({ value: s, label: STRATEGY[s].label }))}
+              options={(['cheapest', 'fastest', 'balanced'] as Strategy[]).map((s) => ({
+                value: s,
+                label: STRATEGY[s].label,
+              }))}
             />
             <div className="sched-row">
               <span>

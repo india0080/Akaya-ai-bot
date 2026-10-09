@@ -1,0 +1,31 @@
+{
+  "name": "akaya-monorepo",
+  "private": true,
+  "version": "0.5.0",
+  "description": "Akaya monorepo: app, agents, services and shared packages (npm workspaces).",
+  "workspaces": [
+    "packages/*",
+    "app",
+    "agents/shopping-agent/backend",
+    "agents/shopping-agent/frontend",
+    "agents/grocery-agent/backend",
+    "agents/grocery-agent/frontend",
+    "services/*"
+  ],
+  "scripts": {
+    "postinstall": "npm run build:packages",
+    "build:packages": "npm run build -w @akaya/affiliate -w @akaya/server-kit -w @akaya/tz -w @akaya/reminders",
+    "build": "npm run build:packages && npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "dupcheck": "jscpd --config .jscpd.json",
+    "ci": "npm run build:packages && npm run lint && npm run typecheck && npm test && npm run dupcheck && npm run build"
+  },
+  "devDependencies": {
+    "jscpd": "^4.0.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

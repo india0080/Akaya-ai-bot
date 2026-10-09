@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import type { Filters, StoreId } from '../api/types';
-import { inr, STORE_NAMES } from '../lib/format';
-import { RangeSlider, Segmented, Toggle } from '../ui/Controls';
-import { Sheet } from '../ui/Sheet';
+import type { Filters } from '../api/types';
+import { inr, storeMeta, STORE_IDS } from '../lib/format';
+import { RangeSlider, Segmented, Toggle, Sheet } from '@akaya/ui';
 import { StoreMark } from './bits';
 
-const STORES = Object.keys(STORE_NAMES) as StoreId[];
+const STORES = STORE_IDS;
 
 export function FilterSheet({
   open,
@@ -34,7 +33,15 @@ function FilterBody({ value, ceiling, onApply }: { value: Filters; ceiling: numb
   const stores = f.stores ?? [];
   return (
     <div className="filters">
-      <RangeSlider label="Max price" min={200} max={top} step={100} value={Math.min(f.maxPrice ?? top, top)} onChange={(v) => set({ maxPrice: v >= top ? undefined : v })} format={(v) => (v >= top ? 'Any' : inr(v))} />
+      <RangeSlider
+        label="Max price"
+        min={200}
+        max={top}
+        step={100}
+        value={Math.min(f.maxPrice ?? top, top)}
+        onChange={(v) => set({ maxPrice: v >= top ? undefined : v })}
+        format={(v) => (v >= top ? 'Any' : inr(v))}
+      />
       <span className="label">Minimum rating</span>
       <Segmented
         value={String(f.minRating ?? 0)}
@@ -60,8 +67,12 @@ function FilterBody({ value, ceiling, onApply }: { value: Filters; ceiling: numb
       <span className="label">Stores {stores.length ? `(${stores.length})` : '(all)'}</span>
       <div className="store-pick">
         {STORES.map((s) => (
-          <button key={s} className={`chip${stores.includes(s) ? ' on' : ''}`} onClick={() => set({ stores: stores.includes(s) ? stores.filter((x) => x !== s) : [...stores, s] })}>
-            <StoreMark store={s} size={16} /> {STORE_NAMES[s]}
+          <button
+            key={s}
+            className={`chip${stores.includes(s) ? ' on' : ''}`}
+            onClick={() => set({ stores: stores.includes(s) ? stores.filter((x) => x !== s) : [...stores, s] })}
+          >
+            <StoreMark store={s} size={16} /> {storeMeta(s).name}
           </button>
         ))}
       </div>
@@ -71,7 +82,11 @@ function FilterBody({ value, ceiling, onApply }: { value: Filters; ceiling: numb
             <b>Hide fake-review risk</b>
             <small>Drops listings with strong fake-review signals</small>
           </div>
-          <Toggle label="Hide fake-review risk" on={!!f.hideHighFakeRisk} onChange={(v) => set({ hideHighFakeRisk: v })} />
+          <Toggle
+            label="Hide fake-review risk"
+            on={!!f.hideHighFakeRisk}
+            onChange={(v) => set({ hideHighFakeRisk: v })}
+          />
         </div>
         <div className="list-row">
           <div className="grow">

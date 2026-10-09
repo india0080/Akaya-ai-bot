@@ -1,11 +1,18 @@
 import type { Handoff } from '../api/types';
 import { inr } from '../lib/format';
-import { Icon } from '../ui/Icon';
-import { Sheet } from '../ui/Sheet';
+import { Icon, Sheet } from '@akaya/ui';
 import { StoreMark } from './bits';
 
 /** Confirm screen: hands the filled cart to the store app. The user pays there; Akaya never does. */
-export function HandoffSheet({ handoff, onClose, onPaid }: { handoff: Handoff | null; onClose: () => void; onPaid: () => void }) {
+export function HandoffSheet({
+  handoff,
+  onClose,
+  onPaid,
+}: {
+  handoff: Handoff | null;
+  onClose: () => void;
+  onPaid: () => void;
+}) {
   return (
     <Sheet open={!!handoff} onClose={onClose} title="Pay in the store app" height={88}>
       {handoff && (

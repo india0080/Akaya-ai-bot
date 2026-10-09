@@ -1,8 +1,8 @@
 import { AppTile } from '../../components/AppTile';
-import { Icon } from '../../components/Icon';
+import { Icon } from '@akaya/ui';
 import { APP_BY_ID } from '../../integrations/catalog';
 import type { FMChannel } from '../../future/channels';
-import { fmtWhen } from '../../future/tz';
+import { fmtWhen } from '@akaya/tz';
 import type { FMMedia } from '../../state/types';
 
 /** How the message will look on each platform (approximate, for review before scheduling). */

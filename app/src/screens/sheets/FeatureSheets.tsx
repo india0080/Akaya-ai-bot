@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sheet } from '../../components/Sheet';
-import { Icon, type IconName } from '../../components/Icon';
-import { RangeSlider, Toggle } from '../../components/Controls';
-import { useToast } from '../../components/Toast';
+import { Sheet, Icon, type IconName, RangeSlider, Toggle, useToast } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { AGENT_APPS } from '../../lib/agentApps';
 
@@ -11,6 +8,7 @@ type P = { open: boolean; onClose: () => void };
 
 export function AgentsSheet({ open, onClose }: P) {
   const { state, toggleAgent, addAgent } = useApp();
+  const nav = useNavigate();
   const toast = useToast();
   const [name, setName] = useState('');
   const [when, setWhen] = useState('Every day at 9:00 AM');
@@ -34,6 +32,26 @@ export function AgentsSheet({ open, onClose }: P) {
             <span className="aa-open">
               Open <Icon name="open" size={12} />
             </span>
+          </button>
+        ))}
+      </div>
+      <span className="label">Travel & deals</span>
+      <div className="card list" style={{ margin: '0 0 14px' }}>
+        {(
+          [
+            ['plane', 'cyan', 'Travel & Stays', 'Hotels, flights and things to do', '/travel'],
+            ['bag', 'pink', 'Shopping & Deals', "Search any store, today's deals", '/shopping'],
+          ] as const
+        ).map(([icon, tone, title, sub, to]) => (
+          <button key={to} className="list-row" onClick={() => nav(to)}>
+            <span className={`gi gi-${tone}`} style={{ width: 36, height: 36, borderRadius: 12 }}>
+              <Icon name={icon} size={18} />
+            </span>
+            <span className="grow">
+              <b>{title}</b>
+              <small>{sub}</small>
+            </span>
+            <Icon name="chev" size={16} className="faint" />
           </button>
         ))}
       </div>

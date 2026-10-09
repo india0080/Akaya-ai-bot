@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import type { Compare } from '../api/types';
-import { Sheet } from '../ui/Sheet';
-import { Icon } from '../ui/Icon';
+import { Sheet, Icon } from '@akaya/ui';
 import { SampleTag } from './bits';
 
 export function CompareSheet({ open, onClose, keys }: { open: boolean; onClose: () => void; keys: string[] }) {
@@ -62,8 +61,8 @@ function CompareBody({ keys, onClose }: { keys: string[]; onClose: () => void })
         ))}
       </div>
       <p className="fine">
-        Green = best in row. Akaya pick = highest overall score (price, adjusted rating, review volume, seller trust and delivery, minus
-        fake-review risk). <SampleTag show={data.sample} />
+        Green = best in row. Akaya pick = highest overall score (price, adjusted rating, review volume, seller trust and
+        delivery, minus fake-review risk). <SampleTag show={data.sample} />
       </p>
     </div>
   );

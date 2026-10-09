@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '../../components/Icon';
+import { Icon } from '@akaya/ui';
 import { auth, authMessage, confirmError, emailError, passwordError } from '../../auth';
 import { Field, FormError, PasswordField, StrengthMeter } from './AuthBits';
 

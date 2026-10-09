@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen } from '../../components/Screen';
-import { Icon, type IconName } from '../../components/Icon';
+import { Screen, Icon, type IconName } from '@akaya/ui';
 import { Logo } from '../../components/Logo';
 import { DemoBadge } from './AuthBits';
 import '../SignUp.css';

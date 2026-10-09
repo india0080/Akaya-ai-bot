@@ -1,0 +1,35 @@
+{
+  "name": "@akaya/ui",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Akaya design system: tokens, global CSS, Pearl, Icon, Sheet, Toast, controls and screen chrome. Source-only (TSX + CSS) — consumed directly by the Vite apps.",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css",
+    "./src/theme/fonts.ts"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/theme/tokens.css",
+    "./global.css": "./src/theme/global.css",
+    "./fonts": "./src/theme/fonts.ts",
+    "./agent.css": "./src/agent/agent.css"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint ."
+  },
+  "peerDependencies": {
+    "framer-motion": ">=11",
+    "react": ">=19",
+    "react-dom": ">=19",
+    "react-router-dom": ">=7"
+  },
+  "devDependencies": {
+    "@akaya/config": "*"
+  },
+  "dependencies": {
+    "@fontsource/comfortaa": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0"
+  }
+}

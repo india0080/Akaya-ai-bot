@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon, type IconName } from '../components/Icon';
+import { Screen, ScreenHeader, Icon, type IconName } from '@akaya/ui';
 import { useApp } from '../state/store';
 import './Features.css';
 

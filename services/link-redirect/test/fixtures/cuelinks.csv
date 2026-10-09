@@ -1,0 +1,3 @@
+Transaction ID,Store,Sale Amount,Commission,Status,Transaction Date,Sub ID
+CL-1001,Nykaa,"1,250.00",62.50,Validated,05/09/2026,deals
+CL-1002,Croma,"18,990.00",189.90,Pending,12/09/2026,shopping

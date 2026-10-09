@@ -1,0 +1,5 @@
+{
+  "extends": "@akaya/config/tsconfig.react.json",
+  "compilerOptions": { "tsBuildInfoFile": "../../node_modules/.tmp/ui.tsbuildinfo" },
+  "include": ["src"]
+}

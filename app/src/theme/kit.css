@@ -1,0 +1,44 @@
+/* App-wide helpers shared by feature screens (commerce, reminders). Component styles stay next to their feature. */
+.pad-x {
+  margin-left: 18px;
+  margin-right: 18px;
+}
+.fine {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  line-height: 1.5;
+  margin-top: 10px;
+  font-weight: 600;
+}
+.chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin-bottom: 10px;
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 99px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: var(--surface-2);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.chip.on {
+  background: var(--g-brand);
+  color: #fff;
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.sample-tag {
+  background: var(--tint-orange);
+  color: var(--orange-text);
+}

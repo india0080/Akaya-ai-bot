@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from './api/client';
 import type { AppNotification, ParseResult } from './api/types';
-import type { ThemePref } from './theme/useThemeSync';
+import type { ThemePref } from '@akaya/ui';
 
 interface Persisted {
   theme: ThemePref;
@@ -69,7 +69,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [refreshNotifications]);
 
   const value = useMemo<Ctx>(
-    () => ({ ...p, set, draft, setDraft, notifications, latest, dismissLatest: () => setLatest(null), refreshNotifications, online }),
+    () => ({
+      ...p,
+      set,
+      draft,
+      setDraft,
+      notifications,
+      latest,
+      dismissLatest: () => setLatest(null),
+      refreshNotifications,
+      online,
+    }),
     [p, set, draft, notifications, latest, refreshNotifications, online],
   );
   return <C.Provider value={value}>{children}</C.Provider>;

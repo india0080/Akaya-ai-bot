@@ -1,17 +1,13 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen } from '../components/Screen';
-import { Icon, type IconName } from '../components/Icon';
+import { Screen, Icon, type IconName, RangeSlider, Segmented, Toggle, Sheet, useToast } from '@akaya/ui';
 import { Avatar } from '../components/Avatar';
-import { RangeSlider, Segmented, Toggle } from '../components/Controls';
-import { Sheet } from '../components/Sheet';
-import { useToast } from '../components/Toast';
 import { useApp } from '../state/store';
 import { speak } from '../lib/speech';
 import type { ThemePref } from '../state/types';
 import { AppTile } from '../components/AppTile';
-import { APPS, APP_BY_ID } from '../integrations/catalog';
+import { APPS, connectedApps } from '../integrations/catalog';
 import './More.css';
 
 function Row({
@@ -47,7 +43,11 @@ function Row({
 const LINKS: { icon: IconName; tone: string; label: string; to: string }[] = [
   { icon: 'search', tone: 'blue', label: 'Search', to: '/search' },
   { icon: 'history', tone: 'violet', label: 'History', to: '/history' },
-  { icon: 'crown', tone: 'orange', label: 'Upgrade', to: '/upgrade' },
+  { icon: 'alarm', tone: 'orange', label: 'Reminders', to: '/reminders' },
+  { icon: 'future', tone: 'blue', label: 'Future', to: '/future' },
+  { icon: 'plane', tone: 'cyan', label: 'Travel', to: '/travel' },
+  { icon: 'bag', tone: 'pink', label: 'Shopping', to: '/shopping' },
+  { icon: 'crown', tone: 'violet', label: 'Upgrade', to: '/upgrade' },
   { icon: 'help', tone: 'green', label: 'Support', to: '/support' },
 ];
 
@@ -57,10 +57,7 @@ export function More() {
   const nav = useNavigate();
   const toast = useToast();
   const [confirm, setConfirm] = useState(false);
-  const connected = Object.values(state.integrations)
-    .sort((a, b) => b.connectedAt - a.connectedAt)
-    .map((c) => APP_BY_ID[c.appId])
-    .filter(Boolean);
+  const connected = connectedApps(state.integrations);
 
   return (
     <Screen className="more">
@@ -292,6 +289,13 @@ export function More() {
         <div className="list">
           <Row icon="help" tone="green" title="Support" sub="FAQs and contact" onClick={() => nav('/support')} />
           <Row
+            icon="chart"
+            tone="blue"
+            title="Earnings"
+            sub="Affiliate clicks and commission (sample data)"
+            onClick={() => nav('/earnings')}
+          />
+          <Row
             icon="logout"
             tone="orange"
             title="Log out"
@@ -300,7 +304,7 @@ export function More() {
           />
         </div>
       </div>
-      <p className="version faint">Akaya · Your intelligent assistant · v0.1.0</p>
+      <p className="version faint">Akaya · Your intelligent assistant · v0.5.0</p>
 
       <Sheet open={confirm} onClose={() => setConfirm(false)} title="Log out?" height={40}>
         <p className="muted" style={{ fontSize: '0.84rem', lineHeight: 1.5 }}>

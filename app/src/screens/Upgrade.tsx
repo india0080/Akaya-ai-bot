@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
-import { Segmented } from '../components/Controls';
-import { Pearl } from '../components/Pearl';
-import { useToast } from '../components/Toast';
+import { Screen, ScreenHeader, Icon, Segmented, Pearl, useToast } from '@akaya/ui';
 import './Features.css';
 
 const PRO = [

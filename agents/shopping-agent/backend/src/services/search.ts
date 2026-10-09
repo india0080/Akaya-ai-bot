@@ -3,15 +3,15 @@
  * rank/group/badge → keep an index for product detail, compare and the watchlist.
  */
 import type { Config } from '../config.js';
-import { affiliateUrl } from '../engine/affiliate.js';
+import { offerLink } from '../engine/affiliate.js';
 import { parseQuery } from '../engine/queryParser.js';
 import { rankAndGroup, type SortBy } from '../engine/ranking.js';
 import { CATALOG } from '../providers/mockCatalog.js';
 import { makeOffer } from '../providers/mock.js';
 import type { SearchProgress, ShoppingProvider } from '../providers/types.js';
 import type { Filters, Offer, ParsedQuery, Preset, ProductResult } from '../types.js';
-import type { TtlCache } from './cache.js';
-import type { JobQueue } from './queue.js';
+import type { TtlCache } from '@akaya/server-kit';
+import type { JobQueue } from '@akaya/server-kit';
 
 export interface ProviderRun {
   id: string;
@@ -56,13 +56,14 @@ export class SearchService {
     private queue: JobQueue,
   ) {}
 
-  link = (o: Offer) => affiliateUrl(o, this.cfg);
+  link = (o: Offer) => offerLink(o, this.cfg.affiliate);
 
   prepare(input: SearchInput) {
     const parsed = parseQuery(input.query);
     const filters: Filters = { ...parsed.filters, ...(input.filters ?? {}) };
     const hint = parsed.hints[0] as Preset | undefined;
-    const preset: Preset = input.preset ?? (hint && ['cheapest', 'fastest', 'quality'].includes(hint) ? hint : 'balanced');
+    const preset: Preset =
+      input.preset ?? (hint && ['cheapest', 'fastest', 'quality'].includes(hint) ? hint : 'balanced');
     const sort = input.sort ?? 'relevance';
     const cacheKey = `${this.providers.map((p) => p.id).join('+')}|${parsed.q.toLowerCase()}`;
     return { parsed, filters, preset, sort, cacheKey };

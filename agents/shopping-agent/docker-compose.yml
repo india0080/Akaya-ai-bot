@@ -2,7 +2,10 @@
 # Uses .env if present (copy .env.example). With no keys it runs on the Mock provider (sample data).
 services:
   api:
-    build: ./backend
+    build:
+      context: ../..
+      dockerfile: docker/node-service.Dockerfile
+      args: { WORKSPACE: '@akaya/shopping-agent-backend', DIR: agents/shopping-agent/backend }
     ports: ['8787:8787']
     env_file:
       - path: .env
@@ -17,7 +20,12 @@ services:
       interval: 10s
       retries: 5
   web:
-    build: ./frontend
+    build:
+      context: ../..
+      dockerfile: docker/vite-web.Dockerfile
+      args: { WORKSPACE: '@akaya/shopping-agent-frontend', DIR: agents/shopping-agent/frontend }
+    environment:
+      API_UPSTREAM: http://api:8787
     ports: ['5174:80']
     depends_on: [api]
   # Production: swap the in-memory cache/queue for Redis (see docs/ARCHITECTURE.md)

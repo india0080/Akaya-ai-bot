@@ -1,20 +1,16 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
-import { Pearl } from '../components/Pearl';
-import { Icon } from '../components/Icon';
+import { Screen, Pearl, Icon, Segmented, useToast } from '@akaya/ui';
 import { Avatar } from '../components/Avatar';
-import { Segmented } from '../components/Controls';
-import { useToast } from '../components/Toast';
 import { useApp } from '../state/store';
 import { greeting } from '../lib/time';
 import { Bento } from './home/Bento';
-import { TodayRow } from './home/TodayRow';
+import { TodaySlider } from './home/TodaySlider';
 import { FeatureSlider } from './home/FeatureSlider';
 import { RecentChats } from './home/RecentChats';
 import { AppTile } from '../components/AppTile';
-import { APP_BY_ID } from '../integrations/catalog';
+import { connectedApps } from '../integrations/catalog';
 import { NotificationsSheet } from './sheets/NotificationsSheet';
 import { ReadScreenSheet } from './sheets/ReadScreenSheet';
 import { TodaySheet } from './sheets/TodaySheet';
@@ -68,10 +64,7 @@ export function Home() {
   const pearlRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
   const proxyRef = useRef<HTMLInputElement>(null);
-  const connectedApps = Object.values(state.integrations)
-    .sort((a, b) => b.connectedAt - a.connectedAt)
-    .map((c) => APP_BY_ID[c.appId])
-    .filter(Boolean);
+  const myApps = connectedApps(state.integrations);
   const unread = state.notifications.filter((n) => !n.read).length;
   const { mode } = state.settings;
 
@@ -224,11 +217,11 @@ export function Home() {
 
       <div className="sec-head">
         <h3>Today</h3>
-        <button className="pill-link" onClick={() => open('today')}>
-          See all <Icon name="chev" size={13} strokeWidth={2.6} />
+        <button className="pill-link" onClick={() => nav('/reminders')}>
+          Reminders <Icon name="chev" size={13} strokeWidth={2.6} />
         </button>
       </div>
-      <TodayRow onOpen={(kind) => open('today', { kind })} />
+      <TodaySlider />
 
       <div className="sec-head">
         <h3>Your apps</h3>
@@ -237,7 +230,7 @@ export function Home() {
         </button>
       </div>
       <div className="h-apps">
-        {connectedApps.map((app) => (
+        {myApps.map((app) => (
           <button key={app.id} className="card h-app" onClick={() => nav(`/apps?app=${app.id}`)}>
             <AppTile app={app} size={44} />
             <span className="lbl">{app.name}</span>

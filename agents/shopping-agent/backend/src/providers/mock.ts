@@ -3,17 +3,37 @@
  * Every offer is `sample: true` and the UI labels it. Prices drift slowly so price alerts can fire.
  */
 import { STORES, type Offer, type StoreId } from '../types.js';
-import { rng, indianPrice, hash } from '../lib/rng.js';
-import { storeSearchUrl } from '../lib/storeLinks.js';
+import { rng, indianPrice, hash } from '@akaya/server-kit';
+import { storeSearchUrl } from '../engine/affiliate.js';
 import { CATALOG, GENERIC_BRANDS, type CategoryDef, type Template } from './mockCatalog.js';
 import type { PricePoint, SearchOptions, ShoppingProvider } from './types.js';
 
-const STORE_PRICE: Partial<Record<StoreId, number>> = { meesho: 0.9, croma: 1.03, reliance: 1.02, tatacliq: 1.01, ajio: 0.98 };
-const STORE_DAYS: Record<StoreId, [number, number]> = {
-  amazon: [1, 3], flipkart: [2, 4], myntra: [3, 5], meesho: [5, 8], croma: [1, 3], ajio: [4, 6],
-  reliance: [2, 4], tatacliq: [3, 6], nykaa: [3, 5], other: [4, 7],
+const STORE_PRICE: Partial<Record<StoreId, number>> = {
+  meesho: 0.9,
+  croma: 1.03,
+  'reliance-digital': 1.02,
+  tatacliq: 1.01,
+  ajio: 0.98,
 };
-const STORE_SHARE: Partial<Record<StoreId, number>> = { amazon: 0.46, flipkart: 0.34, myntra: 0.16, meesho: 0.12, ajio: 0.08 };
+const STORE_DAYS: Record<StoreId, [number, number]> = {
+  amazon: [1, 3],
+  flipkart: [2, 4],
+  myntra: [3, 5],
+  meesho: [5, 8],
+  croma: [1, 3],
+  ajio: [4, 6],
+  'reliance-digital': [2, 4],
+  tatacliq: [3, 6],
+  nykaa: [3, 5],
+  other: [4, 7],
+};
+const STORE_SHARE: Partial<Record<StoreId, number>> = {
+  amazon: 0.46,
+  flipkart: 0.34,
+  myntra: 0.16,
+  meesho: 0.12,
+  ajio: 0.08,
+};
 const SELLERS: Record<StoreId, string[]> = {
   amazon: ['Cocoblu Retail', 'Appario Retail', 'RetailEZ', 'Clicktech Retail'],
   flipkart: ['RetailNet', 'SuperComNet', 'OmniTechRetail', 'TrueComRetail'],
@@ -21,7 +41,7 @@ const SELLERS: Record<StoreId, string[]> = {
   meesho: ['Supplier #48213', 'Supplier #10977', 'Supplier #77120'],
   croma: ['Croma'],
   ajio: ['AJIO (brand store)', 'Reliance Retail'],
-  reliance: ['Reliance Digital'],
+  'reliance-digital': ['Reliance Digital'],
   tatacliq: ['Tata CLiQ (brand store)', 'Tatacliq Seller'],
   nykaa: ['Nykaa'],
   other: ['Marketplace seller'],
@@ -70,7 +90,11 @@ export function makeOffer(t: Template, cat: Pick<CategoryDef, 'id' | 'emoji'>, s
       years: sus ? r1(0.3 + r() * 0.6) : Math.round(2 + r() * 8),
       fulfilled: !sus && (store === 'amazon' || store === 'flipkart' ? r() > 0.25 : store !== 'meesho'),
     },
-    delivery: { days: d0 + Math.floor(r() * (d1 - d0 + 1)), free: price > 499 || store === 'meesho', cod: store !== 'tatacliq' || price < 20000 },
+    delivery: {
+      days: d0 + Math.floor(r() * (d1 - d0 + 1)),
+      free: price > 499 || store === 'meesho',
+      cod: store !== 'tatacliq' || price < 20000,
+    },
     inStock: r() > 0.06,
     url: storeSearchUrl(store, t.title),
     specs: t.specs ?? {},
@@ -80,7 +104,11 @@ export function makeOffer(t: Template, cat: Pick<CategoryDef, 'id' | 'emoji'>, s
 }
 
 function tokens(s: string) {
-  return s.toLowerCase().normalize('NFC').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  return s
+    .toLowerCase()
+    .normalize('NFC')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
 }
 
 /** Categories that match the query; empty when nothing matches. */
@@ -93,7 +121,10 @@ export function matchCategories(q: string): CategoryDef[] {
     for (const it of c.items) if (toks.some((t) => t.length > 2 && it.brand.toLowerCase() === t)) s += 1;
     return { c, s };
   });
-  return scored.filter((x) => x.s > 0).sort((a, b) => b.s - a.s).map((x) => x.c);
+  return scored
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.c);
 }
 
 function genericCategory(q: string): CategoryDef {
@@ -124,7 +155,7 @@ export class MockProvider implements ShoppingProvider {
   id = 'mock';
   label = 'Mock (sample data)';
   kind = 'mock' as const;
-  stores: StoreId[] = ['amazon', 'flipkart', 'myntra', 'meesho', 'croma', 'ajio', 'reliance', 'tatacliq'];
+  stores: StoreId[] = ['amazon', 'flipkart', 'myntra', 'meesho', 'croma', 'ajio', 'reliance-digital', 'tatacliq'];
   setupHint = 'Always available. Returns SAMPLE data only.';
   /** offerId → price multiplier (simulated market movement) */
   private drift = new Map<string, number>();
@@ -143,7 +174,8 @@ export class MockProvider implements ShoppingProvider {
       let items = c.items;
       const branded = items.filter((it) => brandToks.includes(it.brand.toLowerCase()));
       if (branded.length) items = [...branded, ...items.filter((x) => !branded.includes(x))];
-      for (const t of items) for (const s of t.stores) offers.push(makeOffer(t, c, s, this.drift.get(`mock:${s}:${t.key}`) ?? 1));
+      for (const t of items)
+        for (const s of t.stores) offers.push(makeOffer(t, c, s, this.drift.get(`mock:${s}:${t.key}`) ?? 1));
     }
     // simulate per-store fan-out so the UI can show progress
     const byStore = new Map<StoreId, number>();

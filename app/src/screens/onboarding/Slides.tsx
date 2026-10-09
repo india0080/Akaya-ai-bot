@@ -1,8 +1,7 @@
 /* The five animated feature-intro illustrations. Motion follows the approved motion notes. */
 import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
-import { Pearl } from '../../components/Pearl';
-import { Icon } from '../../components/Icon';
+import { Pearl, Icon } from '@akaya/ui';
 import { useClock, useStages, useTyped } from '../../lib/anim';
 
 const spring = { type: 'spring' as const, stiffness: 260, damping: 20 };

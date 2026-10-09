@@ -45,7 +45,12 @@ export class TokenCache {
     const res = await this.fetchFn(this.url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ grant_type: 'client_credentials', client_id: this.clientId, client_secret: this.clientSecret, scope: 'creatorsapi::default' }),
+      body: JSON.stringify({
+        grant_type: 'client_credentials',
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        scope: 'creatorsapi::default',
+      }),
       signal,
     });
     if (!res.ok) throw new Error(`Creators API token ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -62,7 +67,11 @@ interface Money {
 export interface CreatorsItem {
   asin: string;
   detailPageURL: string;
-  itemInfo?: { title?: { displayValue?: string }; byLineInfo?: { brand?: { displayValue?: string } }; classifications?: { productGroup?: { displayValue?: string } } };
+  itemInfo?: {
+    title?: { displayValue?: string };
+    byLineInfo?: { brand?: { displayValue?: string } };
+    classifications?: { productGroup?: { displayValue?: string } };
+  };
   offersV2?: {
     listings?: {
       price?: { money?: Money; savingBasis?: { money?: Money } };
@@ -79,7 +88,7 @@ export class AmazonProvider implements ShoppingProvider {
   label = 'Amazon.in (Creators API)';
   kind = 'api' as const;
   stores = ['amazon' as const];
-  setupHint = 'Set AMAZON_CREDENTIAL_ID, AMAZON_CREDENTIAL_SECRET, AMAZON_PARTNER_TAG (Associates Central → Creators API).';
+  setupHint = 'Set AMAZON_CREDENTIAL_ID, AMAZON_CREDENTIAL_SECRET, AMAZON_TAG_IN (Associates Central → Creators API).';
   private tokens: TokenCache | null = null;
   constructor(
     private cfg: Config,
@@ -87,14 +96,14 @@ export class AmazonProvider implements ShoppingProvider {
   ) {}
 
   configured() {
-    return !!(this.cfg.AMAZON_CREDENTIAL_ID && this.cfg.AMAZON_CREDENTIAL_SECRET && this.cfg.AMAZON_PARTNER_TAG);
+    return !!(this.cfg.AMAZON_CREDENTIAL_ID && this.cfg.AMAZON_CREDENTIAL_SECRET && this.cfg.AMAZON_TAG_IN);
   }
 
   /** Builds the searchItems request (exported shape is unit-tested). */
   searchRequest(query: string, limit = 10) {
     return {
       keywords: query,
-      partnerTag: this.cfg.AMAZON_PARTNER_TAG,
+      partnerTag: this.cfg.AMAZON_TAG_IN,
       marketplace: this.cfg.AMAZON_MARKETPLACE,
       itemCount: Math.min(10, limit),
       resources: RESOURCES,
@@ -104,11 +113,20 @@ export class AmazonProvider implements ShoppingProvider {
   async search(query: string, opts: SearchOptions = {}): Promise<Offer[]> {
     if (!this.configured()) throw new ProviderNotConfiguredError(this.id, this.setupHint);
     opts.onProgress?.({ provider: this.id, store: 'amazon', status: 'searching' });
-    this.tokens ??= new TokenCache(this.cfg.AMAZON_TOKEN_URL, this.cfg.AMAZON_CREDENTIAL_ID!, this.cfg.AMAZON_CREDENTIAL_SECRET!, this.fetchFn);
+    this.tokens ??= new TokenCache(
+      this.cfg.AMAZON_TOKEN_URL,
+      this.cfg.AMAZON_CREDENTIAL_ID!,
+      this.cfg.AMAZON_CREDENTIAL_SECRET!,
+      this.fetchFn,
+    );
     const token = await this.tokens.get(opts.signal);
     const res = await this.fetchFn(`${API}/searchItems`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'x-marketplace': this.cfg.AMAZON_MARKETPLACE },
+      headers: {
+        authorization: `Bearer ${token}`,
+        'content-type': 'application/json',
+        'x-marketplace': this.cfg.AMAZON_MARKETPLACE,
+      },
       body: JSON.stringify(this.searchRequest(query, opts.limit)),
       signal: opts.signal,
     });

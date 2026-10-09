@@ -1,11 +1,14 @@
 import { logoUri, luminance, useLogoTable } from '../integrations/logos';
 import type { IntegrationApp } from '../integrations/types';
 
+/** what a tile needs: integration apps and @akaya/affiliate platforms both fit */
+export type TileBrand = Pick<IntegrationApp, 'id' | 'color' | 'mono' | 'darkText'>;
+
 /**
  * App icon tile: the brand's own logo on a white tile (like a real app icon).
  * Falls back to a monogram in the brand colour when no permissively licensed logo exists.
  */
-export function AppTile({ app, size = 44 }: { app: IntegrationApp; size?: number }) {
+export function AppTile({ app, size = 44 }: { app: TileBrand; size?: number }) {
   const logos = useLogoTable();
   const logo = logos?.[app.id];
   const radius = size * 0.28;

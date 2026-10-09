@@ -3,9 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { ago } from '../lib/format';
 import { useStore } from '../state';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { useToast } from '../ui/Toast';
+import { Icon, Screen, useToast } from '@akaya/ui';
 
 export function Alerts() {
   const { notifications, refreshNotifications } = useStore();
@@ -46,7 +44,9 @@ export function Alerts() {
         </span>
         <div className="grow">
           <b>Phone notifications</b>
-          <small>{push ? `Delivery: ${push}` : 'In-app alerts are live. Push (Web Push / FCM) is a stub until keys are set.'}</small>
+          <small>
+            {push ? `Delivery: ${push}` : 'In-app alerts are live. Push (Web Push / FCM) is a stub until keys are set.'}
+          </small>
         </div>
         <button className="btn btn-sm btn-ghost" onClick={enablePush}>
           {push ? 'Saved' : 'Enable'}
@@ -75,9 +75,7 @@ export function Alerts() {
           </button>
         ))}
         {notifications.length === 0 && (
-          <div className="empty">
-            No alerts yet. Watch a product and Akaya will tell you when the price drops.
-          </div>
+          <div className="empty">No alerts yet. Watch a product and Akaya will tell you when the price drops.</div>
         )}
       </div>
       <button className="btn btn-ghost btn-block test-btn" onClick={() => api.testNotification()}>

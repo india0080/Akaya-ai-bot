@@ -4,8 +4,6 @@ import type { StoreFlow } from './base.js';
 export const zeptoFlow: StoreFlow = {
   store: 'zepto',
   stateKey: 'ZEPTO_STORAGE_STATE',
-  home: 'https://www.zeptonow.com',
-  searchUrl: (q) => `https://www.zeptonow.com/search?query=${encodeURIComponent(q)}`,
   selectors: {
     productCard: 'TODO',
     productName: 'TODO',

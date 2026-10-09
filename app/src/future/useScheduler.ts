@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useApp } from '../state/store';
-import { useToast } from '../components/Toast';
+import { useToast } from '@akaya/ui';
 import { showNow } from '../native/notify';
 import { nextRepeat, overall, simulateSend, summary } from './engine';
 

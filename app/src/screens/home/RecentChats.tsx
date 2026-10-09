@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon, type IconName } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { relDay } from '../../lib/time';
 

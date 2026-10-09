@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { NotifBanner } from './components/NotifBanner';
-import { VoiceSheet } from './components/VoiceSheet';
 import { Alerts } from './screens/Alerts';
 import { Home } from './screens/Home';
 import { EXAMPLES } from './lib/examples';
@@ -10,12 +9,15 @@ import { Product } from './screens/Product';
 import { Results } from './screens/Results';
 import { Watchlist } from './screens/Watchlist';
 import { useStore } from './state';
-import { useThemeSync } from './theme/useThemeSync';
-import { BottomNav } from './ui/BottomNav';
-import { DeviceHostContext } from './ui/deviceHost';
-import { StatusBar } from './ui/StatusBar';
-import { ToastProvider } from './ui/Toast';
-import { useShowStatusBar } from './ui/useShowStatusBar';
+import {
+  useThemeSync,
+  BottomNav,
+  DeviceHostContext,
+  StatusBar,
+  ToastProvider,
+  useShowStatusBar,
+  VoiceSheet,
+} from '@akaya/ui';
 
 const TABS = ['/home', '/watchlist', '/alerts', '/more'];
 
@@ -62,6 +64,8 @@ export function App() {
             )}
             <NotifBanner />
             <VoiceSheet
+              title="Speak to search"
+              hint='Try "1500 se kam ka school bag, jaldi chahiye"'
               open={voice}
               onClose={() => setVoice(false)}
               demos={[EXAMPLES[1], 'wireless earbuds 3000 tak, achhi rating', 'running shoes under 3k on flipkart']}

@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Sheet } from '../../components/Sheet';
-import { Icon } from '../../components/Icon';
+import { Sheet, Icon, Pearl, Toggle, useToast } from '@akaya/ui';
 import { AppTile } from '../../components/AppTile';
-import { Pearl } from '../../components/Pearl';
-import { Toggle } from '../../components/Controls';
-import { useToast } from '../../components/Toast';
 import { useApp } from '../../state/store';
 import { integrations, KIND_LABEL, CATEGORIES, type ConnectStage, type IntegrationApp } from '../../integrations';
 import { relDay } from '../../lib/time';

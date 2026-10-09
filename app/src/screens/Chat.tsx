@@ -2,14 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
-import { Pearl } from '../components/Pearl';
-import { Icon } from '../components/Icon';
-import { useToast } from '../components/Toast';
+import { Pearl, Icon, useToast, Sheet } from '@akaya/ui';
 import { useApp } from '../state/store';
 import { mockReply } from '../lib/mock';
 import { fmtTime, uid } from '../lib/time';
 import { speak } from '../lib/speech';
-import { Sheet } from '../components/Sheet';
 import { AppTile } from '../components/AppTile';
 import { APP_BY_ID } from '../integrations/catalog';
 import type { Attachment, ChatMode } from '../state/types';
@@ -25,6 +22,9 @@ import {
   pickSystemContact,
 } from '../chat/pickers';
 import { replyWithAttachments } from '../chat/reply';
+import { actionReply, detectLinkAction } from '../commerce/chatIntent';
+import { LinkCard } from '../commerce/LinkCard';
+import { draftFromText, isReminderRequest, ReminderChatCard, reminderReply, useReminders } from '../features/reminders';
 import { AttachSheet, type PickKind } from './chat/AttachSheet';
 import { ComposerChips, MessageAttachments } from './chat/Attachments';
 import { useRecorder } from './chat/useRecorder';
@@ -48,6 +48,7 @@ export function Chat() {
   const fromHome = (location.state as { from?: string } | null)?.from === 'home';
   const toast = useToast();
   const { state, newChat, addMessage } = useApp();
+  const reminders = useReminders();
   const chat = id ? state.chats.find((c) => c.id === id) : undefined;
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
@@ -102,11 +103,22 @@ export function Chat() {
     setTyping(true);
     const target = cid;
     window.setTimeout(
-      () => {
-        const base = mockReply(msg || title, state.settings.mode);
+      async () => {
+        if (msg && isReminderRequest(msg)) {
+          const { draft, title } = draftFromText(msg, state.settings.reminderLead, 'chat');
+          if (!draft) reminders.compose({ text: msg, source: 'chat' });
+          const res = draft ? await reminders.create(draft) : undefined;
+          addMessage(target, 'akaya', reminderReply(msg, title, draft, res), {
+            reminderId: res && res.outcome !== 'cancelled' ? res.id : undefined,
+          });
+          setTyping(false);
+          return;
+        }
+        const action = detectLinkAction(msg) ?? undefined;
+        const base = action ? actionReply(action) : mockReply(msg || title, state.settings.mode);
         const reply = replyWithAttachments(base, msg, sentAtts, sentModes);
         const gen = sentModes.includes('image') ? [generateImage(msg || 'Akaya')] : undefined;
-        addMessage(target, 'akaya', reply, { attachments: gen });
+        addMessage(target, 'akaya', reply, { attachments: gen, action });
         setTyping(false);
       },
       (sentModes.includes('deep') ? 1800 : 900) + Math.random() * 700,
@@ -244,6 +256,8 @@ export function Chat() {
                 )}
                 {m.attachments && m.attachments.length > 0 && <MessageAttachments items={m.attachments} />}
                 {m.text}
+                {m.action && <LinkCard action={m.action} />}
+                {m.reminderId && <ReminderChatCard id={m.reminderId} />}
                 <span className="msg-meta">
                   {fmtTime(m.at)}
                   {m.from === 'akaya' && (

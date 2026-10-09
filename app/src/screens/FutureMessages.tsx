@@ -1,22 +1,18 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
+import { Screen, ScreenHeader, Icon, Segmented, useToast } from '@akaya/ui';
 import { AppTile } from '../components/AppTile';
-import { Segmented } from '../components/Controls';
-import { useToast } from '../components/Toast';
 import { useApp } from '../state/store';
 import { APP_BY_ID } from '../integrations/catalog';
 import { CHANNEL_BY_ID } from '../future/channels';
 import { channelsOf } from '../future/engine';
-import { fmtWhen } from '../future/tz';
+import { fmtWhen } from '@akaya/tz';
 import { cancelLocal, ensureNotifyPermission, scheduleLocal } from '../native/notify';
 import type { FMStatus, FutureMessage } from '../state/types';
 import { Composer, type Draft } from './future/Composer';
 import './Features.css';
 import './future/Future.css';
+import { useNow } from '../lib/useNow';
 
 const STATUS: Record<FMStatus, { label: string; cls: string }> = {
   scheduled: { label: 'Scheduled', cls: 'st-scheduled' },
@@ -43,11 +39,7 @@ export function FutureMessages() {
   const [params, setParams] = useSearchParams();
   const edit = params.get('edit');
   const tab = params.get('tab') === 'sent' ? 'sent' : 'queue';
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 5000);
-    return () => clearInterval(id);
-  }, []);
+  const now = useNow(5000);
 
   const editing = edit && edit !== 'new' ? (state.future.find((m) => m.id === edit) ?? null) : null;
   const queue = state.future.filter((m) => m.status !== 'sent').sort((a, b) => a.when - b.when);
@@ -57,7 +49,6 @@ export function FutureMessages() {
   const list = tab === 'sent' ? sent : queue;
 
   const openComposer = (id: string) => {
-    setNow(Date.now());
     setParams({ ...(tab === 'sent' ? { tab } : {}), edit: id });
   };
   const closeComposer = () => setParams(tab === 'sent' ? { tab } : {}, { replace: true });

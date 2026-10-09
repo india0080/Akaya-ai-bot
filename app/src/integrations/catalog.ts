@@ -3,7 +3,7 @@
  * Tiles show each brand's own logo (see ./logos.ts and README "Brand logos"); `mono` + `color`
  * remain as the fallback tile when no logo source exists.
  */
-import type { Ability, CategoryId, ConnectKind, IntegrationApp } from './types';
+import type { Ability, CategoryId, ConnectKind, Connection, IntegrationApp } from './types';
 
 export const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: 'email', label: 'Email' },
@@ -961,6 +961,13 @@ export const APPS: IntegrationApp[] = ROWS.map(([id, name, category, desc, color
 
 export const APP_BY_ID: Record<string, IntegrationApp> = Object.fromEntries(APPS.map((x) => [x.id, x]));
 export const POPULAR = APPS.filter((x) => x.popular);
+
+/** apps the user has connected, most recent first */
+export const connectedApps = (integrations: Record<string, Connection>): IntegrationApp[] =>
+  Object.values(integrations)
+    .sort((a, b) => b.connectedAt - a.connectedAt)
+    .map((c) => APP_BY_ID[c.appId])
+    .filter(Boolean);
 
 export const KIND_LABEL: Record<ConnectKind, string> = {
   oauth: 'Sign in',

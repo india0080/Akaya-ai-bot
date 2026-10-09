@@ -40,11 +40,11 @@ shopping-agent/
 │  │  ├─ routes/index.ts    REST + SSE endpoints (documented in OpenAPI)
 │  │  ├─ engine/            queryParser (EN/HI/Hinglish), ranking, fakeReview, affiliate links
 │  │  ├─ providers/         adapter interface + mock, amazon (Creators API), flipkart, serpapi, browser fallback
-│  │  └─ services/          search orchestration, job queue, TTL cache, watchlist + price checker, notifications, JSON store
+│  │  └─ services/          search orchestration, watchlist + price checker (queue, cache, notifications, store: @akaya/server-kit)
 │  ├─ test/                 vitest: parser, ranking, fake-review, cache, queue, providers, API (inject)
 │  └─ scripts/export-openapi.ts
 ├─ frontend/                React 19 + TS + Vite, Akaya UI (pearl bubble, brand colours, Comfortaa/Manrope, light/dark)
-│  └─ src/{screens,components,api,ui,theme}
+│  └─ src/{screens,components,api}   (UI kit from @akaya/ui)
 ├─ docs/                    ARCHITECTURE.md · API.md · PROVIDERS.md · openapi.json
 ├─ .env.example
 └─ docker-compose.yml

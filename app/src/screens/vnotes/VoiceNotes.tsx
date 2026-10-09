@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Screen } from '../../components/Screen';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { Pearl } from '../../components/Pearl';
-import { Icon } from '../../components/Icon';
-import { Segmented } from '../../components/Controls';
+import { Screen, ScreenHeader, Pearl, Icon, Segmented } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { MODES, MODE_BY_ID } from '../../notes/modes';
 import { speechSupported } from '../../notes/recorder';

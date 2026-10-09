@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
-import { useToast } from '../components/Toast';
+import { Screen, ScreenHeader, Icon, useToast } from '@akaya/ui';
 import { useApp } from '../state/store';
 import { LANGS, PHRASES, translate } from '../lib/mock';
 import { speak } from '../lib/speech';

@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Screen } from '../../components/Screen';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { Pearl } from '../../components/Pearl';
-import { Icon } from '../../components/Icon';
-import { useToast } from '../../components/Toast';
-import { Sheet } from '../../components/Sheet';
+import { Screen, ScreenHeader, Pearl, Icon, useToast, Sheet } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { fmtTime } from '../../lib/time';
 import { MODE_BY_ID } from '../../notes/modes';

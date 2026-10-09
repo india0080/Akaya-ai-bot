@@ -1,21 +1,32 @@
 /** Domain schemas (zod) shared by providers, the ranking engine and the REST API. */
+import { getPlatform } from '@akaya/affiliate';
 import { z } from 'zod';
 
-export const StoreId = z.enum(['amazon', 'flipkart', 'myntra', 'meesho', 'croma', 'ajio', 'reliance', 'tatacliq', 'nykaa', 'other']);
+/** Store ids are @akaya/affiliate platform ids (plus 'other'). */
+export const StoreId = z.enum([
+  'amazon',
+  'flipkart',
+  'myntra',
+  'meesho',
+  'croma',
+  'ajio',
+  'reliance-digital',
+  'tatacliq',
+  'nykaa',
+  'other',
+]);
 export type StoreId = z.infer<typeof StoreId>;
 
-export const STORES: Record<StoreId, { name: string; color: string; mono: string }> = {
-  amazon: { name: 'Amazon', color: '#ff9900', mono: 'a' },
-  flipkart: { name: 'Flipkart', color: '#2874f0', mono: 'F' },
-  myntra: { name: 'Myntra', color: '#ff3f6c', mono: 'M' },
-  meesho: { name: 'Meesho', color: '#9f2089', mono: 'Me' },
-  croma: { name: 'Croma', color: '#12daa8', mono: 'C' },
-  ajio: { name: 'AJIO', color: '#2c4152', mono: 'AJ' },
-  reliance: { name: 'Reliance Digital', color: '#e42529', mono: 'RD' },
-  tatacliq: { name: 'Tata CLiQ', color: '#1a1a1a', mono: 'TC' },
-  nykaa: { name: 'Nykaa', color: '#fc2779', mono: 'N' },
-  other: { name: 'Other store', color: '#64748b', mono: '•' },
-};
+/** name / brand colour / monogram per store, from the shared platform registry */
+export const STORES = Object.fromEntries(
+  StoreId.options.map((s) => {
+    const p = s === 'other' ? null : getPlatform(s);
+    return [
+      s,
+      p ? { name: p.name, color: p.color, mono: p.mono } : { name: 'Other store', color: '#64748b', mono: '•' },
+    ];
+  }),
+) as Record<StoreId, { name: string; color: string; mono: string }>;
 
 export const Offer = z.object({
   id: z.string(),

@@ -2,7 +2,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { CHANNELS } from './channels.js';
-import { isValidZone } from './tz.js';
+import { isValidZone } from '@akaya/tz';
 import { NotFound, Scheduler, ValidationError } from './scheduler.js';
 import type { MessageStore } from './store/types.js';
 import type { ChannelId } from './types.js';
@@ -16,9 +16,16 @@ const MessageInput = z.object({
   subject: z.string().max(300).optional(),
   text: z.string().max(70000).default(''),
   media: z
-    .object({ kind: z.enum(['image', 'video']), url: z.string().url().startsWith('https://'), mime: z.string().optional(), name: z.string().optional() })
+    .object({
+      kind: z.enum(['image', 'video']),
+      url: z.string().url().startsWith('https://'),
+      mime: z.string().optional(),
+      name: z.string().optional(),
+    })
     .optional(),
-  sendAt: z.union([z.number().int(), z.string().datetime({ offset: true })]).transform((v) => (typeof v === 'number' ? v : Date.parse(v))),
+  sendAt: z
+    .union([z.number().int(), z.string().datetime({ offset: true })])
+    .transform((v) => (typeof v === 'number' ? v : Date.parse(v))),
   timezone: z.string().default('Asia/Kolkata').refine(isValidZone, 'unknown IANA time zone'),
   repeat: z.enum(['once', 'daily', 'weekly', 'monthly', 'yearly']).default('once'),
 });
@@ -54,7 +61,10 @@ export function buildApp({ scheduler, store, apiToken, logger = false }: AppOpti
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof ValidationError) return reply.code(422).send({ error: 'validation', issues: err.issues });
     if (err instanceof NotFound) return reply.code(404).send({ error: 'not found' });
-    if (err instanceof z.ZodError) return reply.code(400).send({ error: 'bad request', issues: err.issues.map((i) => `${i.path.join('.')}: ${i.message}`) });
+    if (err instanceof z.ZodError)
+      return reply
+        .code(400)
+        .send({ error: 'bad request', issues: err.issues.map((i) => `${i.path.join('.')}: ${i.message}`) });
     reply.code(500).send({ error: 'internal error' });
   });
 

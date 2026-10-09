@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
-import { Pearl, type Mood } from '../components/Pearl';
-import { Icon } from '../components/Icon';
+import { Screen, Pearl, type Mood, Icon } from '@akaya/ui';
 import { useApp } from '../state/store';
 import { mockReply } from '../lib/mock';
 import { createRecognizer, speak, stopSpeaking, type SpeechRec } from '../lib/speech';
+import { draftFromText, isReminderRequest, reminderReply, useReminders } from '../features/reminders';
 import './Voice.css';
 
 type Phase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied';
@@ -24,7 +23,8 @@ const LANG_CODE: Record<string, string> = {
  * Uses the Web Speech API for live transcription when available, and speaks the reply.
  */
 export function Voice() {
-  const { state, addToday, logActivity } = useApp();
+  const { state, logActivity } = useApp();
+  const reminders = useReminders();
   const nav = useNavigate();
   const [phase, setPhase] = useState<Phase>('idle');
   const [transcript, setTranscript] = useState('');
@@ -147,24 +147,20 @@ export function Voice() {
     cleanup();
     setBars(Array(24).fill(0.08));
     setPhase('thinking');
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       const q = heard || 'Hello';
-      const r = heard
-        ? mockReply(q, state.settings.mode)
-        : "I didn't catch that. Try again, or tap a suggestion below.";
-      if (/remind/i.test(q)) {
-        const d = new Date();
-        d.setHours(17, 0, 0, 0);
-        addToday({
-          kind: 'reminder',
-          title: q.replace(/remind me (to )?/i, '').replace(/^./, (c) => c.toUpperCase()),
-          time: d.getTime(),
-        });
+      let r = heard ? mockReply(q, state.settings.mode) : "I didn't catch that. Try again, or tap a suggestion below.";
+      if (heard && isReminderRequest(q)) {
+        const { draft, title } = draftFromText(q, state.settings.reminderLead, 'voice');
+        if (!draft) reminders.compose({ text: q, source: 'voice' });
+        r = reminderReply(q, title, draft, draft ? await reminders.create(draft) : undefined);
       }
       if (heard) logActivity({ kind: 'voice', title: 'Voice Chat', input: heard, output: r });
       setReply(r);
       setPhase('speaking');
-      speak(r, state.settings.voiceSpeed, 'en-IN', () => setPhase((p) => (p === 'speaking' ? 'idle' : p)));
+      speak(r, state.settings.voiceSpeed, /[\u0900-\u097F]/.test(r) ? 'hi-IN' : 'en-IN', () =>
+        setPhase((p) => (p === 'speaking' ? 'idle' : p)),
+      );
     }, 900);
   };
 

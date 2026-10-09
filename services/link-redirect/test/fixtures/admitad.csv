@@ -1,0 +1,4 @@
+Action ID,Advcampaign name,Action date,Status,Cart,Payment,Currency,SubID
+900001,Myntra IN,2026-09-05 13:20:11,approved,2499.00,149.94,INR,shopping-card
+900002,AJIO.com,2026-09-06 09:02:00,pending,1799.00,90.00,INR,deals
+900003,MakeMyTrip IN CPS,2026-09-08 21:45:30,declined,8400.00,252.00,INR,travel

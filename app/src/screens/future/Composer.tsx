@@ -1,10 +1,9 @@
 import { useMemo, useState } from 'react';
-import { Sheet } from '../../components/Sheet';
-import { Icon } from '../../components/Icon';
+import { Sheet, Icon } from '@akaya/ui';
 import { AppTile } from '../../components/AppTile';
 import { APP_BY_ID } from '../../integrations/catalog';
 import { AUTO_LABEL, CHANNELS, CHANNEL_BY_ID, channelIssues, type FMChannel } from '../../future/channels';
-import { ZONES, epochToZoned, fmtWhen, zonedToEpoch } from '../../future/tz';
+import { ZONES, epochToZoned, fmtWhen, zonedToEpoch } from '@akaya/tz';
 import { fileThumb, humanSize, pickFiles } from '../../lib/media';
 import type { FMMedia, FMRepeat, FutureMessage } from '../../state/types';
 import { Preview } from './Preview';

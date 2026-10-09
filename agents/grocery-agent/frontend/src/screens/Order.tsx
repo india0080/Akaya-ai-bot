@@ -4,11 +4,15 @@ import { api } from '../api/client';
 import type { Order } from '../api/types';
 import { SampleTag, StoreMark } from '../components/bits';
 import { inr, istTime, istWhen } from '../lib/format';
-import { Icon, type IconName } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
+import { Icon, type IconName, Screen, ScreenHeader } from '@akaya/ui';
 
-const ICON: Record<string, IconName> = { placed: 'check', packed: 'box', out_for_delivery: 'truck', arriving: 'location', delivered: 'home' };
+const ICON: Record<string, IconName> = {
+  placed: 'check',
+  packed: 'box',
+  out_for_delivery: 'truck',
+  arriving: 'location',
+  delivered: 'home',
+};
 
 export function OrderScreen() {
   const { id = '' } = useParams();
@@ -31,7 +35,11 @@ export function OrderScreen() {
   const delivered = o.stage === 'delivered';
   return (
     <Screen className="order">
-      <ScreenHeader title="Track order" sub={`${o.storeName} · placed ${istWhen(o.placedAt)}`} right={o.simulated ? <SampleTag text="SIMULATED" /> : undefined} />
+      <ScreenHeader
+        title="Track order"
+        sub={`${o.storeName} · placed ${istWhen(o.placedAt)}`}
+        right={o.simulated ? <SampleTag text="SIMULATED" /> : undefined}
+      />
       <section className={`track-hero${delivered ? ' done' : ''}`}>
         <div className="route">
           <span className="rt-store">
@@ -48,7 +56,13 @@ export function OrderScreen() {
           </span>
         </div>
         <b>{o.stageLabel}</b>
-        <small>{delivered ? 'Enjoy! Rate your order in the store app.' : o.minutesLeft > 0 ? `Arriving in about ${o.minutesLeft} min` : 'Arriving any moment'}</small>
+        <small>
+          {delivered
+            ? 'Enjoy! Rate your order in the store app.'
+            : o.minutesLeft > 0
+              ? `Arriving in about ${o.minutesLeft} min`
+              : 'Arriving any moment'}
+        </small>
       </section>
 
       <div className="timeline card">
@@ -62,7 +76,13 @@ export function OrderScreen() {
               {i < o.stages.length - 1 && <span className="tl-bar" />}
               <span className="grow">
                 <b>{s.label}</b>
-                <small>{s.key === 'out_for_delivery' && s.done ? 'Delivery partner is on the way' : s.done ? 'Done' : 'Expected'}</small>
+                <small>
+                  {s.key === 'out_for_delivery' && s.done
+                    ? 'Delivery partner is on the way'
+                    : s.done
+                      ? 'Done'
+                      : 'Expected'}
+                </small>
               </span>
               <small className="tl-t">{istTime(s.eta)} IST</small>
             </div>
@@ -87,7 +107,9 @@ export function OrderScreen() {
           </div>
         ))}
       </div>
-      <p className="fine center">Tracking is simulated for the Mock provider. Live tracking needs a store partnership or order webhook.</p>
+      <p className="fine center">
+        Tracking is simulated for the Mock provider. Live tracking needs a store partnership or order webhook.
+      </p>
     </Screen>
   );
 }

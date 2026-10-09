@@ -1,6 +1,8 @@
 # Features
 
-Each feature has a README that maps it to its code in `app/`. The code was **not** moved into feature modules: it is spread across shared state, routes and onboarding, so moving it is a refactor for later (see each README).
+Each feature has a README that maps it to its code in `app/`. **Reminders** is a self-contained feature module
+(`app/src/features/reminders/` + the `@akaya/reminders` package). The others are still spread across shared state,
+routes and onboarding; moving them into `app/src/features/` the same way is a refactor for later (see each README).
 
 | Feature | README |
 |---|---|

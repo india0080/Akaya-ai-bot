@@ -5,10 +5,7 @@ import type { Job, Plan, Quote, QuoteProgress, StoreId, StoreQuote } from '../ap
 import { SampleTag, StoreMark } from '../components/bits';
 import { StoreSheet } from '../components/StoreSheet';
 import { inr, STORE_IDS, STORES, STRATEGY } from '../lib/format';
-import { Icon } from '../ui/Icon';
-import { Pearl } from '../ui/Pearl';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
+import { Icon, Pearl, Screen, ScreenHeader } from '@akaya/ui';
 
 export function Compare() {
   const { id = '' } = useParams();
@@ -31,7 +28,8 @@ function Progress({ jobId }: { jobId: string }) {
     es.addEventListener('done', (e) => {
       const j = JSON.parse((e as MessageEvent).data) as Job<Quote>;
       es.close();
-      if (j.status === 'done' && j.result) window.setTimeout(() => nav(`/compare/${j.result!.id}`, { replace: true }), 450);
+      if (j.status === 'done' && j.result)
+        window.setTimeout(() => nav(`/compare/${j.result!.id}`, { replace: true }), 450);
       else setError(j.error ?? 'Comparison failed');
     });
     es.onerror = () => setError('Lost connection to the backend');
@@ -69,7 +67,9 @@ function Progress({ jobId }: { jobId: string }) {
           })}
         </div>
         {error && <p className="voice-err">{error}</p>}
-        <p className="fine center">Mock provider: sample catalogue and fees. Real stores need your own logged-in session or a partner API.</p>
+        <p className="fine center">
+          Mock provider: sample catalogue and fees. Real stores need your own logged-in session or a partner API.
+        </p>
       </div>
     </Screen>
   );
@@ -84,7 +84,10 @@ function QuoteView({ id }: { id: string }) {
   useEffect(() => {
     api.getQuote(id).then(setQ, (e: Error) => setErr(e.message));
   }, [id]);
-  const plan: Plan | undefined = useMemo(() => (q ? (q.plans.find((p) => p.id === (planId ?? q.recommended)) ?? q.plans[0]) : undefined), [q, planId]);
+  const plan: Plan | undefined = useMemo(
+    () => (q ? (q.plans.find((p) => p.id === (planId ?? q.recommended)) ?? q.plans[0]) : undefined),
+    [q, planId],
+  );
 
   if (err)
     return (
@@ -114,7 +117,11 @@ function QuoteView({ id }: { id: string }) {
 
   return (
     <Screen className="compare">
-      <ScreenHeader title="Best basket" sub={`${q.items.length} items · ${q.address} ${q.pincode}`} right={q.sample ? <SampleTag text="SAMPLE" /> : undefined} />
+      <ScreenHeader
+        title="Best basket"
+        sub={`${q.items.length} items · ${q.address} ${q.pincode}`}
+        right={q.sample ? <SampleTag text="SAMPLE" /> : undefined}
+      />
 
       <div className="plan-tabs">
         {q.plans.map((p) => (
@@ -155,7 +162,8 @@ function QuoteView({ id }: { id: string }) {
         <p className="ph-why">{plan.why}</p>
         {plan.substitutions > 0 && (
           <p className="ph-flag">
-            <Icon name="swap" size={13} /> {plan.substitutions} substitution{plan.substitutions > 1 ? 's' : ''}: review in the basket
+            <Icon name="swap" size={13} /> {plan.substitutions} substitution{plan.substitutions > 1 ? 's' : ''}: review
+            in the basket
           </p>
         )}
         {plan.missing.length > 0 && (
@@ -169,7 +177,9 @@ function QuoteView({ id }: { id: string }) {
               <i style={{ width: `${Math.min(100, (plan.total / q.budget) * 100)}%` }} />
             </span>
             <small>
-              {plan.overBudget ? `${inr(plan.total - q.budget)} over your ${inr(q.budget)} budget` : `${inr(q.budget - plan.total)} under your ${inr(q.budget)} budget`}
+              {plan.overBudget
+                ? `${inr(plan.total - q.budget)} over your ${inr(q.budget)} budget`
+                : `${inr(q.budget - plan.total)} under your ${inr(q.budget)} budget`}
             </small>
           </div>
         ) : null}
@@ -213,13 +223,17 @@ function QuoteView({ id }: { id: string }) {
                   <Icon name="clock" size={12} /> {s.etaLabel}
                 </span>
                 {s.missing.length > 0 && <i className="t-warn">{s.missing.length} missing</i>}
-                {s.lines.some((l) => l.substitution) && <i className="t-sub">{s.lines.filter((l) => l.substitution).length} swap</i>}
+                {s.lines.some((l) => l.substitution) && (
+                  <i className="t-sub">{s.lines.filter((l) => l.substitution).length} swap</i>
+                )}
               </span>
             </span>
             <span className="sc-price">
               <b>{inr(s.total)}</b>
               {!s.missing.length && s.total === cheapest && <i className="badge b-price">Cheapest</i>}
-              {!s.missing.length && s.etaMin === fastest && s.total !== cheapest && <i className="badge b-fast">Fastest</i>}
+              {!s.missing.length && s.etaMin === fastest && s.total !== cheapest && (
+                <i className="badge b-fast">Fastest</i>
+              )}
             </span>
           </button>
         ))}

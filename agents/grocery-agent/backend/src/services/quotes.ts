@@ -5,8 +5,8 @@ import { parseList } from '../engine/listParser.js';
 import { budgetTips, buildPlans, quoteStore, type StoreInput } from '../engine/optimizer.js';
 import type { GroceryProvider } from '../providers/types.js';
 import type { ParsedItem, Plan, StoreId, StoreQuote } from '../types.js';
-import type { TtlCache } from './cache.js';
-import type { JobQueue } from './queue.js';
+import type { TtlCache } from '@akaya/server-kit';
+import type { JobQueue } from '@akaya/server-kit';
 
 export interface QuoteProgress {
   store: StoreId;
@@ -65,11 +65,15 @@ export class QuoteService {
     const parsed = this.prepare(input);
     const pincode = input.pincode ?? this.cfg.DEFAULT_PINCODE;
     const address = input.address ?? this.cfg.DEFAULT_ADDRESS;
-    const stores = (input.stores?.length ? input.stores : [...this.providers.keys()]).filter((s) => this.providers.has(s));
+    const stores = (input.stores?.length ? input.stores : [...this.providers.keys()]).filter((s) =>
+      this.providers.has(s),
+    );
     const sig = `${pincode}|${stores.join(',')}|${new Date().getUTCHours()}|${parsed.items.map((i) => `${i.key}:${i.qty}:${i.brand ?? ''}:${i.variant ?? ''}`).join(';')}`;
     const finish = (inputs: StoreInput[]): Quote => {
       // quotes are always rebuilt from the current items (cache holds only store data), so item ids stay consistent
-      const quotes = inputs.map((i) => quoteStore(parsed.items, i)).sort((a, b) => a.missing.length - b.missing.length || a.total - b.total);
+      const quotes = inputs
+        .map((i) => quoteStore(parsed.items, i))
+        .sort((a, b) => a.missing.length - b.missing.length || a.total - b.total);
       const r = { quotes, inputs };
       const { plans, recommended, splitNote } = buildPlans(parsed.items, r.quotes, r.inputs, { budget: input.budget });
       const rec = plans.find((p) => p.id === recommended);
@@ -106,7 +110,12 @@ export class QuoteService {
           try {
             const sv = await p.serviceability(pincode);
             const skus = await p.findSkus(parsed.items, { pincode, signal });
-            report({ store, status: 'done', found: new Set(skus.filter((s) => s.inStock).map((s) => s.itemKey)).size, etaLabel: sv.etaLabel });
+            report({
+              store,
+              status: 'done',
+              found: new Set(skus.filter((s) => s.inStock).map((s) => s.itemKey)).size,
+              etaLabel: sv.etaLabel,
+            });
             return { store, ...sv, skus, fees: (s) => p.fees(s), sample: p.kind === 'mock' };
           } catch (e) {
             report({ store, status: 'error', message: (e as Error).message });

@@ -164,30 +164,34 @@ src/
   theme/
     tokens.css          brand colours, gradients, light + dark token sets  ← edit colours here
     global.css          reset, phone frame, shared primitives (.card, .btn, .input, .list…)
-    useThemeSync.ts     applies Light/Dark/System + text size to <html>
+    kit.css             small app-wide utilities (.pad-x, .fine, .chips/.chip, .sample-tag)
+  (tokens, global CSS, Pearl, Icon, Sheet, Toast, controls and theme sync come from @akaya/ui in packages/ui)
   state/
     types.ts            typed app state (settings, today items, notes, chats…)
     store.tsx           AppProvider + useApp() hook with all actions, localStorage persistence
   lib/
-    pearl.ts            canvas renderer for the Akaya pearl (iridescent bubble)
     anim.ts             small animation hooks (staged timelines, clock, typewriter)
     speech.ts           Web Speech API helpers (text-to-speech, recognition)
     time.ts             greeting, time/date formatting
+    useNow.ts           ticking clock hook (lint-safe "now" for render)
+    scroll.ts           centre the selected chip in a horizontal row
     mock.ts             sample data, mock AI replies, demo phrasebook for Translate
     history.ts          builds the History feed (chats, voice, floating, translations, reminders, notes…)
-  components/           reusable UI: Pearl, Sheet, BottomNav, StatusBar, Toast, Controls
-                        (Toggle, Segmented, RangeSlider), Icon, Logo, Avatar, ScreenHeader…
+  components/           app-only UI: AppTile, Avatar, Logo, GoogleLogo
+  features/reminders/   Reminders module: dashboard, composer, detail, duplicates, alerts, notifications, chat card
+                        (logic + parser in packages/reminders)
+  commerce/             link cards, affiliate disclosure, chat intent card, sample travel/deals/earnings
   auth/                 email auth: AuthProvider interface, Firebase + LocalDemo providers, validation
-  native/               Capacitor glue: status bar, splash, Android back button stack
+  native/               Capacitor glue: status bar, splash, Android back button stack, local notifications, external links
   integrations/         Apps & Integrations: catalog (264 apps), brand logos (logos.generated.ts), provider interface, Mock/Composio/Nango providers
   future/               Future Message: channels, time zones, simulated send engine, scheduler hook
   chat/                 Chat attachment pickers (camera, photos, files, scan, location, contact, create image) and replies
   notes/                Voice Notes: modes, recorder (mic + speech), IndexedDB audio store, notes providers, export
   screens/
     Apps.tsx (+ apps/AppSheet.tsx), vnotes/ (VoiceNotes, Recorder, NoteView, NotePanels, MindMap),
-    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodayRow, FeatureSlider, RecentChats), Chat (+ chat/ AttachSheet, Attachments, useRecorder),
+    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodaySlider, SnapSlider, FeatureSlider, RecentChats), Chat (+ chat/ AttachSheet, Attachments, useRecorder),
     FutureMessages (+ future/ Composer, Preview), Voice, More, Translate, FutureMessages, Notes,
-    Search, History (unified timeline), Upgrade, Support
+    Search, History (unified timeline), Upgrade, Support, Travel, Shopping (Deals), Earnings
     sheets/             bottom sheets: Notifications, Read Screen, Today, Agents, Explore, Loan
 ```
 
@@ -200,7 +204,7 @@ src/
 
 ## State
 
-`useApp()` returns `state` plus actions, e.g. `setSetting`, `toggleToday`, `addNote`, `scheduleMessage`, `newChat`, `addMessage`, `logout`.
+`useApp()` returns `state` plus actions, e.g. `setSetting`, `toggleToday`, `addReminder`, `completeReminder`, `addNote`, `scheduleMessage`, `newChat`, `addMessage`, `logout`.
 Everything is saved under the `akaya:v1` localStorage key. **Log out** clears it and returns to Sign Up.
 
 To connect a real backend, replace the bodies of the actions in `state/store.tsx` and `mockReply`/`translate` in `lib/mock.ts` with API calls. The screens don't need to change.
@@ -346,10 +350,32 @@ The queue shows **Scheduled → Sending → Sent / Failed / Tap to send** with S
 Browser support: live transcription needs the Web Speech API (Chrome, Edge, Safari). Chrome sends audio to Google's speech
 service for recognition. Other browsers still record audio, but without a live transcript. Ask for consent before recording other people.
 
+## Reminders (v0.5)
+
+Create reminders by typing or speaking in Hindi, Hinglish or English (composer, Chat or Voice), with priorities
+(Urgent rings on a louder channel and stays until you act), several alerts, repeats, snooze 5/10/15/30, Done / Pending /
+Reschedule, missed reminders with a smart follow-up, duplicate *Merge / Keep both*, delete with Undo, and seven
+categories with quick-add templates. Home's **Today** is a snap slider (Reminders, Calendar, Follow-ups, Medicine & water,
+Bills & EMI, Birthdays & dates, Habits, Future Messages, Missed); each card opens its filtered view.
+
+On Android, reminders use Capacitor Local Notifications with **Done / Snooze 10m / Reschedule** buttons and fire with the
+app closed. Exact timing needs *Alarms & reminders* (Android 12+): the bell on the Reminders screen opens a demo of every
+notification state, a 10-second test and an *Allow exact alarms* button. Details: `features/reminders/README.md`.
+
+## Travel, Deals and Earnings (v0.5)
+
+Travel & Stays (hotels, flights, activities), Deals inside Shopping and a chat intent card ("biryani on Swiggy",
+"hotels in Goa") open the store's app when installed, otherwise its website, through `@akaya/affiliate`. Buttons that can
+earn show *"Akaya may earn a commission"*. The Earnings screen and all prices are **sample data**. Affiliate IDs go in
+`VITE_AFF_*` (see `.env.example` and `docs/AFFILIATE.md`); empty IDs mean plain links with UTM tags.
+
 ## Handy URLs (for QA and screenshots)
 
 - `#/onboarding?s=3`: open onboarding at slide 3
-- `#/home?sheet=notifications|read|today|agents|explore|loan`: open a Home sheet directly (`&kind=reminder` filters Today)
+- `#/home?sheet=notifications|read|today|agents|explore|loan`: open a Home sheet directly (`&kind=calendar|followup` filters Today)
+- `#/reminders?view=upcoming|completed|missed&category=health&priority=urgent&q=bill&day=today`: Reminders dashboard with filters
+- `#/reminders?new=1&text=kal subah 10 baje meeting`: composer pre-filled · `#/reminders?id=<id>&reschedule=1`: detail / reschedule
+- `#/travel`, `#/shopping`, `#/earnings`: Travel & Stays, Deals, sample Earnings
 - `#/chat?new=1&q=Plan my weekend`: start a chat with a prompt
 - `#/history?f=floating&q=neha`: History with a type filter and search query
 - `#/apps?c=finance`, `#/apps?q=mail`, `#/apps?app=gmail`, `#/apps?app=notion&step=consent`: Apps catalog, filter, search, detail, consent

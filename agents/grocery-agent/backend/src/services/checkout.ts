@@ -9,13 +9,14 @@ import type { Config } from '../config.js';
 import { feeTotal } from '../engine/optimizer.js';
 import { itemByKey } from '../providers/catalog.js';
 import type { FillProgress } from '../providers/types.js';
-import { STORES, type Fees, type Line, type StoreId } from '../types.js';
-import type { JsonDb } from './db.js';
-import type { NotificationService } from './notifications.js';
-import type { JobQueue } from './queue.js';
+import { cartLinks, STORES, type Fees, type Line, type StoreId } from '../types.js';
+import type { JsonDb } from '@akaya/server-kit';
+import type { NotificationService } from '@akaya/server-kit';
+import type { JobQueue } from '@akaya/server-kit';
 import type { QuoteService } from './quotes.js';
 
-export type CartStatus = 'queued' | 'filling' | 'ready' | 'partial' | 'handed_off' | 'paid_by_user' | 'cancelled' | 'expired' | 'failed';
+export type CartStatus =
+  'queued' | 'filling' | 'ready' | 'partial' | 'handed_off' | 'paid_by_user' | 'cancelled' | 'expired' | 'failed';
 export interface Cart {
   store: StoreId;
   storeName: string;
@@ -92,7 +93,9 @@ export class CheckoutService {
 
   private view(c: Checkout): Checkout {
     const now = Date.now();
-    for (const cart of c.carts) if ((cart.status === 'ready' || cart.status === 'partial') && cart.expiresAt && now > cart.expiresAt) cart.status = 'expired';
+    for (const cart of c.carts)
+      if ((cart.status === 'ready' || cart.status === 'partial') && cart.expiresAt && now > cart.expiresAt)
+        cart.status = 'expired';
     return c;
   }
   get(userId: string, id: string) {
@@ -100,7 +103,10 @@ export class CheckoutService {
     return c && this.view(c);
   }
   list(userId: string) {
-    return this.db.data.checkouts.filter((x) => x.userId === userId).map((c) => this.view(c)).sort((a, b) => b.createdAt - a.createdAt);
+    return this.db.data.checkouts
+      .filter((x) => x.userId === userId)
+      .map((c) => this.view(c))
+      .sort((a, b) => b.createdAt - a.createdAt);
   }
 
   create(userId: string, input: { quoteId: string; planId: string; overrides?: Override[]; removed?: string[] }) {
@@ -110,7 +116,11 @@ export class CheckoutService {
     if (!plan) throw new HttpError(404, 'plan not found');
     const removed = new Set(input.removed ?? []);
     const byStore = new Map<StoreId, Line[]>();
-    for (const part of plan.parts) byStore.set(part.store, part.lines.filter((l) => !removed.has(l.itemId)).map((l) => ({ ...l })));
+    for (const part of plan.parts)
+      byStore.set(
+        part.store,
+        part.lines.filter((l) => !removed.has(l.itemId)).map((l) => ({ ...l })),
+      );
     for (const o of input.overrides ?? []) {
       const item = quote.items.find((i) => i.id === o.itemId);
       const sku = this.quotes.providers.get(o.store)?.getSku(o.skuId);
@@ -118,7 +128,11 @@ export class CheckoutService {
       const allowed = new Set([item.key, ...(itemByKey.get(item.key)?.subs ?? [])]);
       if (!allowed.has(sku.itemKey)) throw new HttpError(400, `${sku.name} is not a substitute for ${item.name}`);
       if (!sku.inStock) throw new HttpError(409, `${sku.name} is out of stock`);
-      for (const [st, ls] of byStore) byStore.set(st, ls.filter((l) => l.itemId !== o.itemId));
+      for (const [st, ls] of byStore)
+        byStore.set(
+          st,
+          ls.filter((l) => l.itemId !== o.itemId),
+        );
       const target = byStore.get(o.store) ?? [];
       target.push({
         itemId: o.itemId,
@@ -127,7 +141,10 @@ export class CheckoutService {
         packs: o.packs,
         covered: o.packs * sku.size,
         price: o.packs * sku.price, // re-priced server-side, never trusted from the client
-        substitution: sku.itemKey !== item.key || (item.brand && sku.brand !== item.brand) ? { reason: 'Chosen by you', wanted: item.brand ?? item.name } : undefined,
+        substitution:
+          sku.itemKey !== item.key || (item.brand && sku.brand !== item.brand)
+            ? { reason: 'Chosen by you', wanted: item.brand ?? item.name }
+            : undefined,
         alternatives: [],
       });
       byStore.set(o.store, target);
@@ -149,8 +166,7 @@ export class CheckoutService {
           etaLabel: inputs.find((i) => i.store === store)?.etaLabel ?? '',
           status: 'queued' as CartStatus,
           failed: [],
-          appUrl: STORES[store].app,
-          webUrl: STORES[store].web,
+          ...cartLinks(store),
         };
       });
     if (!carts.length) throw new HttpError(400, 'nothing left in the basket');
@@ -220,7 +236,8 @@ export class CheckoutService {
   /** User tapped "Confirm & open app": hand off to the store app/web for payment. */
   handoff(userId: string, id: string, store: StoreId) {
     const { cart } = this.cart(userId, id, store);
-    if (cart.status === 'expired') throw new HttpError(409, 'Prices may have changed: refresh the basket before paying');
+    if (cart.status === 'expired')
+      throw new HttpError(409, 'Prices may have changed: refresh the basket before paying');
     if (!['ready', 'partial', 'handed_off'].includes(cart.status)) throw new HttpError(409, `cart is ${cart.status}`);
     cart.status = 'handed_off';
     cart.handedOffAt = Date.now();
@@ -251,7 +268,12 @@ export class CheckoutService {
       checkoutId: c.id,
       store,
       storeName: cart.storeName,
-      items: cart.lines.map((l) => ({ name: l.sku.name, packs: l.packs, sizeLabel: l.sku.sizeLabel, emoji: l.sku.emoji })),
+      items: cart.lines.map((l) => ({
+        name: l.sku.name,
+        packs: l.packs,
+        sizeLabel: l.sku.sizeLabel,
+        emoji: l.sku.emoji,
+      })),
       total: cart.verifiedTotal ?? cart.total,
       placedAt: Date.now(),
       etaMin: this.quotes.inputs.get(c.quoteId)?.find((i) => i.store === store)?.etaMin ?? 15,
@@ -269,8 +291,10 @@ export class CheckoutService {
   cancel(userId: string, id: string, store?: StoreId) {
     const c = this.get(userId, id);
     if (!c) throw new HttpError(404, 'checkout not found');
-    for (const cart of c.carts) if ((!store || cart.store === store) && cart.status !== 'paid_by_user') cart.status = 'cancelled';
-    if (c.carts.every((x) => ['paid_by_user', 'cancelled', 'failed'].includes(x.status))) c.status = c.carts.some((x) => x.status === 'paid_by_user') ? 'completed' : 'cancelled';
+    for (const cart of c.carts)
+      if ((!store || cart.store === store) && cart.status !== 'paid_by_user') cart.status = 'cancelled';
+    if (c.carts.every((x) => ['paid_by_user', 'cancelled', 'failed'].includes(x.status)))
+      c.status = c.carts.some((x) => x.status === 'paid_by_user') ? 'completed' : 'cancelled';
     this.db.save();
     return c;
   }
@@ -287,12 +311,27 @@ export class CheckoutService {
     const total = Math.max(1, o.etaMin);
     const elapsed = ((now - o.placedAt) / 60_000) * this.cfg.ORDER_SIM_SPEED;
     const frac = Math.min(1, elapsed / total);
-    const stages = CheckoutService.STAGES.map((s) => ({ ...s, done: frac >= s.at, eta: new Date(o.placedAt + ((s.at * total) / this.cfg.ORDER_SIM_SPEED) * 60_000).toISOString() }));
+    const stages = CheckoutService.STAGES.map((s) => ({
+      ...s,
+      done: frac >= s.at,
+      eta: new Date(o.placedAt + ((s.at * total) / this.cfg.ORDER_SIM_SPEED) * 60_000).toISOString(),
+    }));
     const current = [...stages].reverse().find((s) => s.done)!;
-    return { ...o, stage: current.key, stageLabel: current.label, progress: frac, minutesLeft: Math.max(0, Math.ceil(total - elapsed)), stages, simulated: true };
+    return {
+      ...o,
+      stage: current.key,
+      stageLabel: current.label,
+      progress: frac,
+      minutesLeft: Math.max(0, Math.ceil(total - elapsed)),
+      stages,
+      simulated: true,
+    };
   }
   orders(userId: string) {
-    return this.db.data.orders.filter((o) => o.userId === userId).sort((a, b) => b.placedAt - a.placedAt).map((o) => this.track(o));
+    return this.db.data.orders
+      .filter((o) => o.userId === userId)
+      .sort((a, b) => b.placedAt - a.placedAt)
+      .map((o) => this.track(o));
   }
   order(userId: string, id: string) {
     const o = this.db.data.orders.find((x) => x.id === id && x.userId === userId);
@@ -302,12 +341,19 @@ export class CheckoutService {
   tickOrders() {
     for (const o of this.db.data.orders) {
       const t = this.track(o);
-      if ((t.stage === 'out_for_delivery' || t.stage === 'delivered') && o.lastStage !== t.stage && !(o.lastStage === 'delivered')) {
+      if (
+        (t.stage === 'out_for_delivery' || t.stage === 'delivered') &&
+        o.lastStage !== t.stage &&
+        !(o.lastStage === 'delivered')
+      ) {
         o.lastStage = t.stage;
         this.notify.notify(o.userId, {
           kind: 'order',
           title: t.stage === 'delivered' ? `Delivered: ${o.storeName}` : `Out for delivery: ${o.storeName}`,
-          body: t.stage === 'delivered' ? `Your ${o.items.length} items have arrived.` : `Arriving in about ${t.minutesLeft} min.${o.sample ? ' (simulated tracking)' : ''}`,
+          body:
+            t.stage === 'delivered'
+              ? `Your ${o.items.length} items have arrived.`
+              : `Arriving in about ${t.minutesLeft} min.${o.sample ? ' (simulated tracking)' : ''}`,
           link: `#/orders/${o.id}`,
         });
         this.db.save();

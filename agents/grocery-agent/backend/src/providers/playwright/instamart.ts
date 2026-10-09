@@ -4,8 +4,6 @@ import type { StoreFlow } from './base.js';
 export const instamartFlow: StoreFlow = {
   store: 'instamart',
   stateKey: 'INSTAMART_STORAGE_STATE',
-  home: 'https://www.swiggy.com/instamart',
-  searchUrl: (q) => `https://www.swiggy.com/instamart/search?custom_back=true&query=${encodeURIComponent(q)}`,
   selectors: {
     productCard: 'TODO',
     productName: 'TODO',

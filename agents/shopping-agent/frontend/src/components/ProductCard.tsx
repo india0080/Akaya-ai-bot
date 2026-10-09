@@ -2,10 +2,20 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import type { Product } from '../api/types';
 import { days, inr } from '../lib/format';
-import { Icon } from '../ui/Icon';
+import { Icon } from '@akaya/ui';
 import { BadgeChip, RiskChip, Stars, StoreMark } from './bits';
 
-export function ProductCard({ p, i, compared, onCompare }: { p: Product; i: number; compared: boolean; onCompare: () => void }) {
+export function ProductCard({
+  p,
+  i,
+  compared,
+  onCompare,
+}: {
+  p: Product;
+  i: number;
+  compared: boolean;
+  onCompare: () => void;
+}) {
   const nav = useNavigate();
   const b = p.best;
   return (
@@ -16,7 +26,11 @@ export function ProductCard({ p, i, compared, onCompare }: { p: Product; i: numb
       transition={{ delay: Math.min(i, 8) * 0.05 }}
       data-key={p.key}
     >
-      <button className="pcard-main" onClick={() => nav(`/product/${encodeURIComponent(p.key)}`)} aria-label={`Open ${p.title}`}>
+      <button
+        className="pcard-main"
+        onClick={() => nav(`/product/${encodeURIComponent(p.key)}`)}
+        aria-label={`Open ${p.title}`}
+      >
         <div className="pcard-thumb">
           <span>{p.emoji ?? '🛍️'}</span>
           <i className="rank">#{p.rank}</i>

@@ -1,0 +1,31 @@
+{
+  "name": "@akaya/reminders",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Reminders domain logic: Hindi / Hinglish / English natural-language parser, repeats, snooze, multiple alerts, missed + smart follow-up, fuzzy duplicate detection, categories and templates. Pure TS, IST by default.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@akaya/config": "*",
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  },
+  "dependencies": {
+    "@akaya/tz": "*"
+  },
+  "sideEffects": false
+}

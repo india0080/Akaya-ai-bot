@@ -3,8 +3,8 @@
  * notifies the user (SSE + push stubs) when the price reaches the target or drops by ≥ 5%.
  */
 import { randomUUID } from 'node:crypto';
-import type { JsonDb } from './db.js';
-import type { NotificationService } from './notifications.js';
+import type { JsonDb } from '@akaya/server-kit';
+import type { NotificationService } from '@akaya/server-kit';
 import type { SearchService } from './search.js';
 
 export interface WatchItem {
@@ -102,7 +102,8 @@ export class WatchlistService {
     const fired: { item: WatchItem; reason: string }[] = [];
     for (const w of this.db.data.watchlist) {
       if (userId && w.userId !== userId) continue;
-      const offer = this.search.getOffer(w.offerId) ?? this.search.getProduct(w.productKey)?.offers.find((o) => o.id === w.offerId);
+      const offer =
+        this.search.getOffer(w.offerId) ?? this.search.getProduct(w.productKey)?.offers.find((o) => o.id === w.offerId);
       const provider = offer && this.search.providerFor(offer);
       if (!offer || !provider?.refreshPrice) continue;
       const price = await provider.refreshPrice({ ...offer, price: w.currentPrice }).catch(() => null);
@@ -115,8 +116,10 @@ export class WatchlistService {
       w.lowestSeen = Math.min(w.lowestSeen, price);
       const ref = w.lastAlertPrice ?? w.priceAtAdd;
       let reason = '';
-      if (w.targetPrice && price <= w.targetPrice && (w.lastAlertPrice === undefined || price < w.lastAlertPrice)) reason = `hit your target ₹${w.targetPrice.toLocaleString('en-IN')}`;
-      else if (w.anyDrop && price <= ref * 0.95 && price < prev) reason = `dropped ${Math.round((1 - price / ref) * 100)}%`;
+      if (w.targetPrice && price <= w.targetPrice && (w.lastAlertPrice === undefined || price < w.lastAlertPrice))
+        reason = `hit your target ₹${w.targetPrice.toLocaleString('en-IN')}`;
+      else if (w.anyDrop && price <= ref * 0.95 && price < prev)
+        reason = `dropped ${Math.round((1 - price / ref) * 100)}%`;
       if (reason) {
         w.lastAlertPrice = price;
         fired.push({ item: w, reason });

@@ -21,7 +21,7 @@ unit-tested with stubbed HTTP, but were not run against live accounts.**
 | Provider | Status | Keys | Stores |
 | --- | --- | --- | --- |
 | Mock | active, **sample data** | none | Amazon, Flipkart, Myntra, Meesho, Croma, AJIO, Reliance Digital, Tata CLiQ, Nykaa (simulated) |
-| Amazon Creators API | not connected | `AMAZON_CREDENTIAL_ID`, `AMAZON_CREDENTIAL_SECRET`, `AMAZON_PARTNER_TAG` | Amazon.in |
+| Amazon Creators API | not connected | `AMAZON_CREDENTIAL_ID`, `AMAZON_CREDENTIAL_SECRET`, `AMAZON_TAG_IN` | Amazon.in |
 | Flipkart Affiliate API | not connected | `FLIPKART_AFFILIATE_ID`, `FLIPKART_AFFILIATE_TOKEN` | Flipkart |
 | SerpApi (Google Shopping) | not connected | `SERPAPI_KEY` | many Indian stores via Google Shopping |
 | Browser fallback (Playwright) | off by default | `ENABLE_BROWSER_FALLBACK=true` + `npm i playwright` | any (risky, see below) |
@@ -35,7 +35,7 @@ PA-API 5.0 was **deprecated on 30 Apr 2026 and retired on 15 May 2026**. Calls n
 2. Meet the API eligibility requirement. Per Amazon's docs at the time of writing, that's **10 qualifying sales in the last 30 days**.
 3. Associates Central → Tools → **Creators API** → Create application → Create credential. Copy the
    Credential ID, the Credential Secret (shown once) and the version (India = EU, **3.2**).
-4. Set `AMAZON_CREDENTIAL_ID`, `AMAZON_CREDENTIAL_SECRET`, `AMAZON_PARTNER_TAG`. The defaults
+4. Set `AMAZON_CREDENTIAL_ID`, `AMAZON_CREDENTIAL_SECRET`, `AMAZON_TAG_IN`. The defaults
    `AMAZON_TOKEN_URL=https://api.amazon.co.uk/auth/o2/token` and `AMAZON_MARKETPLACE=www.amazon.in` fit India.
 
 How it works: OAuth 2.0 client-credentials token (cached ~1 h) → `POST https://creatorsapi.amazon/catalog/v1/searchItems`
@@ -79,21 +79,24 @@ TODOs. Until per-store extraction is implemented, it fails with a clear "not imp
 
 ## Affiliate setup
 
-- **Amazon**: partner tag via the Creators API (`partnerTag`), and `affiliateUrl()` appends `tag=` to Amazon links.
-- **Flipkart**: `affid=` added to Flipkart links when `FLIPKART_AFFILIATE_ID` is set.
-- **Other stores** (Myntra, AJIO, Croma, Tata CLiQ, Nykaa…): join through an Indian affiliate
-  network such as **Cuelinks, EarnKaro / INRDeals, vCommission, Admitad or Impact**, and wrap
-  outbound links with their deep-link API. TODO in `engine/affiliate.ts`.
-- **Disclosure**: show an affiliate disclosure near buy buttons (the UI does: "Affiliate links may
-  earn Akaya a commission when configured"). Indian advertising guidelines (ASCI) expect material
-  connections to be disclosed.
+Store links come from the shared **@akaya/affiliate** package (`packages/affiliate`), the single registry used by
+the app, this agent, the grocery agent and services/link-redirect. `engine/affiliate.ts` only maps offers to it.
+
+- **Amazon**: `AMAZON_TAG_IN` is both the Creators API `partnerTag` and the `tag=` on every Amazon link.
+- **Flipkart**: `FLIPKART_AFFILIATE_ID` adds `affid=` (the API also needs `FLIPKART_AFFILIATE_TOKEN`).
+- **Other stores** (Myntra, AJIO, Croma, Tata CLiQ, Nykaa, Meesho, Reliance Digital): set a network ID
+  (`CUELINKS_CID`, `ADMITAD_CODE_<STORE>` or `EARNKARO_LINK_TEMPLATE`) and links are wrapped automatically.
+- Every link also carries `utm_source=akaya&utm_medium=app&utm_campaign=shopping-agent`.
+- **Disclosure**: the product screen shows "Akaya may earn a commission" next to the buy button.
+
+Programmes, sign-up steps, rules and the full env-var list: [docs/AFFILIATE.md](../../../docs/AFFILIATE.md).
 
 ## Notifications
 
 - In-app: Server-Sent Events, live now (`/api/notifications/stream`).
 - Web Push: generate VAPID keys (`npx web-push generate-vapid-keys`), set `VAPID_PUBLIC_KEY` and
   `VAPID_PRIVATE_KEY`, add a service worker in the frontend, and implement `sendWebPush()` with the
-  `web-push` package (TODO in `services/notifications.ts`).
+  `web-push` package (TODO in `packages/server-kit/src/notifications.ts`).
 - FCM (Android app): Firebase project → service account JSON → `FCM_PROJECT_ID` and
   `FCM_SERVICE_ACCOUNT_JSON`; send through the FCM HTTP v1 API (TODO).
 

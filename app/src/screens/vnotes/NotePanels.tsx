@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon, type IconName } from '@akaya/ui';
 import { MODE_BY_ID } from '../../notes/modes';
 import { fmtClock } from '../../notes/export';
 import type { NoteModeId, Segment, StructuredNotes } from '../../notes/types';

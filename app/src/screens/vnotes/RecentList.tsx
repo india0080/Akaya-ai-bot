@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Icon } from '../../components/Icon';
+import { Icon } from '@akaya/ui';
 import { MODE_BY_ID } from '../../notes/modes';
 import { fmtClock, fmtSize } from '../../notes/export';
 import { fmtTime } from '../../lib/time';

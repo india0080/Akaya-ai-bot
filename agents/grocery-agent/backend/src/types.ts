@@ -1,15 +1,23 @@
+import { buildLink, getPlatform } from '@akaya/affiliate';
 import { z } from 'zod';
 
-export const StoreId = z.enum(['instamart', 'blinkit', 'zepto', 'bigbasket', 'amazonfresh']);
+/** Store ids are @akaya/affiliate platform ids. */
+export const StoreId = z.enum(['instamart', 'blinkit', 'zepto', 'bigbasket', 'amazon-fresh']);
 export type StoreId = z.infer<typeof StoreId>;
 
-export const STORES: Record<StoreId, { name: string; short: string; color: string; mono: string; mode: 'quick' | 'slot'; app: string; web: string }> = {
-  instamart: { name: 'Swiggy Instamart', short: 'Instamart', color: '#fc8019', mono: 'IM', mode: 'quick', app: 'swiggy://instamart/cart', web: 'https://www.swiggy.com/instamart' },
-  blinkit: { name: 'Blinkit', short: 'Blinkit', color: '#f8cb46', mono: 'b', mode: 'quick', app: 'blinkit://cart', web: 'https://blinkit.com' },
-  zepto: { name: 'Zepto', short: 'Zepto', color: '#5b1fa3', mono: 'Z', mode: 'quick', app: 'zepto://cart', web: 'https://www.zeptonow.com' },
-  bigbasket: { name: 'BigBasket', short: 'BigBasket', color: '#84c225', mono: 'bb', mode: 'slot', app: 'bigbasket://basket', web: 'https://www.bigbasket.com/basket/' },
-  amazonfresh: { name: 'Amazon Fresh', short: 'Amazon Fresh', color: '#3a9e3a', mono: 'af', mode: 'slot', app: 'amazon://fresh/cart', web: 'https://www.amazon.in/alm/storefront?almBrandId=ctnow' },
-};
+/** name / colour / monogram / delivery mode per store, from the shared platform registry */
+export const STORES = Object.fromEntries(
+  StoreId.options.map((s) => {
+    const p = getPlatform(s)!;
+    return [s, { name: p.name, short: p.short ?? p.name, color: p.color, mono: p.mono, mode: p.delivery ?? 'slot' }];
+  }),
+) as Record<StoreId, { name: string; short: string; color: string; mono: string; mode: 'quick' | 'slot' }>;
+
+/** store cart handoff (app deep link + web fallback) from @akaya/affiliate; UTM-tagged so stores can attribute the visit */
+export function cartLinks(store: StoreId): { appUrl: string; webUrl: string } {
+  const l = buildLink({ platform: store, intent: 'cart', campaign: 'grocery-agent', content: 'handoff' });
+  return { appUrl: l.appUri ?? l.trackedUrl, webUrl: l.trackedUrl };
+}
 
 /** base units: grams, millilitres, pieces */
 export const Unit = z.enum(['g', 'ml', 'pc']);
@@ -47,7 +55,12 @@ export const Sku = z.object({
 });
 export type Sku = z.infer<typeof Sku>;
 
-export const Fees = z.object({ delivery: z.number(), handling: z.number(), smallCart: z.number(), platform: z.number() });
+export const Fees = z.object({
+  delivery: z.number(),
+  handling: z.number(),
+  smallCart: z.number(),
+  platform: z.number(),
+});
 export type Fees = z.infer<typeof Fees>;
 
 export const Line = z.object({
@@ -80,7 +93,16 @@ export type StoreQuote = z.infer<typeof StoreQuote>;
 export const Strategy = z.enum(['cheapest', 'fastest', 'split', 'balanced']);
 export type Strategy = z.infer<typeof Strategy>;
 
-export const PlanPart = z.object({ store: StoreId, storeName: z.string(), lines: z.array(Line), subtotal: z.number(), fees: Fees, total: z.number(), etaMin: z.number(), etaLabel: z.string() });
+export const PlanPart = z.object({
+  store: StoreId,
+  storeName: z.string(),
+  lines: z.array(Line),
+  subtotal: z.number(),
+  fees: Fees,
+  total: z.number(),
+  etaMin: z.number(),
+  etaLabel: z.string(),
+});
 export type PlanPart = z.infer<typeof PlanPart>;
 export const Plan = z.object({
   id: z.string(),

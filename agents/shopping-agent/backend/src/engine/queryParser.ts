@@ -27,11 +27,40 @@ const SYNONYMS: [RegExp, string][] = [
 
 /** Hinglish / Hindi number words before a multiplier: "do hazaar" → "2 hazaar", "dedh lakh" → "1.5 lakh" */
 const NUM_WORDS: Record<string, number> = {
-  ek: 1, do: 2, teen: 3, char: 4, chaar: 4, paanch: 5, panch: 5, chhe: 6, chhah: 6, saat: 7, aath: 8, nau: 9, das: 10,
-  dedh: 1.5, dhai: 2.5, aadha: 0.5,
-  'एक': 1, 'दो': 2, 'तीन': 3, 'चार': 4, 'पांच': 5, 'पाँच': 5, 'छह': 6, 'सात': 7, 'आठ': 8, 'नौ': 9, 'दस': 10, 'डेढ़': 1.5, 'ढाई': 2.5,
+  ek: 1,
+  do: 2,
+  teen: 3,
+  char: 4,
+  chaar: 4,
+  paanch: 5,
+  panch: 5,
+  chhe: 6,
+  chhah: 6,
+  saat: 7,
+  aath: 8,
+  nau: 9,
+  das: 10,
+  dedh: 1.5,
+  dhai: 2.5,
+  aadha: 0.5,
+  एक: 1,
+  दो: 2,
+  तीन: 3,
+  चार: 4,
+  पांच: 5,
+  पाँच: 5,
+  छह: 6,
+  सात: 7,
+  आठ: 8,
+  नौ: 9,
+  दस: 10,
+  डेढ़: 1.5,
+  ढाई: 2.5,
 };
-const NUM_WORD_RE = new RegExp(`(^|\\s)(${Object.keys(NUM_WORDS).join('|')})\\s+(?=(hazaa?r|thousand|sau|hundred|lakh|हज़ार|हजार|सौ|लाख))`, 'gi');
+const NUM_WORD_RE = new RegExp(
+  `(^|\\s)(${Object.keys(NUM_WORDS).join('|')})\\s+(?=(hazaa?r|thousand|sau|hundred|lakh|हज़ार|हजार|सौ|लाख))`,
+  'gi',
+);
 
 const STORE_WORDS: [RegExp, StoreId][] = [
   [/\bamazon\b/i, 'amazon'],
@@ -40,7 +69,7 @@ const STORE_WORDS: [RegExp, StoreId][] = [
   [/\bmeesho\b/i, 'meesho'],
   [/\bcroma\b/i, 'croma'],
   [/\bajio\b/i, 'ajio'],
-  [/\breliance( digital)?\b/i, 'reliance'],
+  [/\breliance( digital)?\b/i, 'reliance-digital'],
   [/\btata ?cliq\b/i, 'tatacliq'],
 ];
 
@@ -50,7 +79,15 @@ const FILLER =
 function num(raw: string, mult?: string): number {
   let n = parseFloat(raw.replace(/,/g, ''));
   const m = (mult ?? '').toLowerCase();
-  if (m === 'k' || m.startsWith('hazar') || m.startsWith('hazaar') || m.startsWith('thousand') || m.startsWith('हज़ार') || m.startsWith('हजार')) n *= 1000;
+  if (
+    m === 'k' ||
+    m.startsWith('hazar') ||
+    m.startsWith('hazaar') ||
+    m.startsWith('thousand') ||
+    m.startsWith('हज़ार') ||
+    m.startsWith('हजार')
+  )
+    n *= 1000;
   else if (m.startsWith('sau') || m.startsWith('सौ') || m.startsWith('hundred')) n *= 100;
   else if (m.startsWith('lakh') || m.startsWith('लाख')) n *= 100000;
   return Math.round(n);
@@ -59,7 +96,10 @@ function num(raw: string, mult?: string): number {
 const NUM = String.raw`(?:₹|rs\.?|inr|rupees?)?\s*(\d[\d,]*(?:\.\d+)?)\s*(k|hazaa?r|thousand|हज़ार|हजार|sau|सौ|hundred|lakh|लाख)?\s*(?:₹|rs\.?|rupees?|रुपये|रुपए)?`;
 
 export function parseQuery(raw: string): ParsedQuery {
-  let s = (' ' + toAsciiDigits(raw.trim()) + ' ').replace(NUM_WORD_RE, (_m, pre: string, w: string) => `${pre}${NUM_WORDS[w.toLowerCase()] ?? NUM_WORDS[w]} `);
+  let s = (' ' + toAsciiDigits(raw.trim()) + ' ').replace(
+    NUM_WORD_RE,
+    (_m, pre: string, w: string) => `${pre}${NUM_WORDS[w.toLowerCase()] ?? NUM_WORDS[w]} `,
+  );
   const filters: Filters = {};
   const hints: string[] = [];
   const devanagari = /[\u0900-\u097F]/.test(raw);
@@ -79,13 +119,28 @@ export function parseQuery(raw: string): ParsedQuery {
     filters.maxPrice = num(m[3], m[4]);
   });
   // max: "under 1500", "below ₹2k", "upto 999", "< 1500", "1500 se kam", "1500 tak", "1500 ke andar", "1500 से कम"
-  take(new RegExp(String.raw`(?:under|below|less than|upto|up to|within|max|<|budget)\s*${NUM}`, 'i'), (m) => (filters.maxPrice = num(m[1], m[2])));
-  take(new RegExp(String.raw`${NUM}\s*(?:se kam|se neeche|ke andar|tak|ke niche|से कम|तक|के अंदर|ke budget)`, 'i'), (m) => (filters.maxPrice = num(m[1], m[2])));
+  take(
+    new RegExp(String.raw`(?:under|below|less than|upto|up to|within|max|<|budget)\s*${NUM}`, 'i'),
+    (m) => (filters.maxPrice = num(m[1], m[2])),
+  );
+  take(
+    new RegExp(String.raw`${NUM}\s*(?:se kam|se neeche|ke andar|tak|ke niche|से कम|तक|के अंदर|ke budget)`, 'i'),
+    (m) => (filters.maxPrice = num(m[1], m[2])),
+  );
   // min: "above 1000", "over 5k", "1000 se upar"
-  take(new RegExp(String.raw`(?:above|over|more than|min|>)\s*${NUM}`, 'i'), (m) => (filters.minPrice = num(m[1], m[2])));
-  take(new RegExp(String.raw`${NUM}\s*(?:se upar|se zyada|से ऊपर|से ज़्यादा)`, 'i'), (m) => (filters.minPrice = num(m[1], m[2])));
+  take(
+    new RegExp(String.raw`(?:above|over|more than|min|>)\s*${NUM}`, 'i'),
+    (m) => (filters.minPrice = num(m[1], m[2])),
+  );
+  take(
+    new RegExp(String.raw`${NUM}\s*(?:se upar|se zyada|से ऊपर|से ज़्यादा)`, 'i'),
+    (m) => (filters.minPrice = num(m[1], m[2])),
+  );
   // rating: "4 star", "4+ rating", "rating 4 se upar"
-  take(/(\d(?:\.\d)?)\s*(?:\+\s*)?(?:star|stars|★|rating)(?:\s*(?:and above|\+|se upar|se zyada))?|rating\s*(?:above|over|se upar)?\s*(\d(?:\.\d)?)/i, (m) => (filters.minRating = parseFloat(m[1] ?? m[2])));
+  take(
+    /(\d(?:\.\d)?)\s*(?:\+\s*)?(?:star|stars|★|rating)(?:\s*(?:and above|\+|se upar|se zyada))?|rating\s*(?:above|over|se upar)?\s*(\d(?:\.\d)?)/i,
+    (m) => (filters.minRating = parseFloat(m[1] ?? m[2])),
+  );
   // delivery
   take(/\b(fast delivery|quick delivery|jaldi|urgent|kal tak|by tomorrow|tomorrow|next day)\b|जल्दी|कल तक/i, (m) => {
     filters.maxDeliveryDays = /kal|tomorrow|next day|कल/i.test(m[0]) ? 1 : 2;
@@ -93,20 +148,25 @@ export function parseQuery(raw: string): ParsedQuery {
   });
   // intent hints
   if (/\b(sasta|saste|cheap|cheapest|budget|kam daam|lowest price)\b|सस्ता|सस्ते/i.test(s)) hints.push('cheapest');
-  if (/\b(best|accha|achha|acche|top rated|quality|branded|original)\b|अच्छा|अच्छे|बढ़िया/i.test(s)) hints.push('quality');
+  if (/\b(best|accha|achha|acche|top rated|quality|branded|original)\b|अच्छा|अच्छे|बढ़िया/i.test(s))
+    hints.push('quality');
   if (/\b(no fake|genuine reviews|real reviews|original)\b/i.test(s)) filters.hideHighFakeRisk = true;
 
   // stores
   const stores: StoreId[] = [];
-  for (const [re, id] of STORE_WORDS) if (re.test(s)) {
-    stores.push(id);
-    s = s.replace(re, ' ');
-  }
+  for (const [re, id] of STORE_WORDS)
+    if (re.test(s)) {
+      stores.push(id);
+      s = s.replace(re, ' ');
+    }
   if (stores.length) filters.stores = stores;
 
   for (const [re, rep] of SYNONYMS) s = s.replace(re, ` ${rep} `);
   s = s
-    .replace(/\b(sabse|sasta|saste|sasti|cheap|cheapest|budget|fast|quick|lowest price|top rated|quality|branded|accha|achha|acche|kam daam)\b|सबसे|सस्ता|सस्ते|बढ़िया/gi, ' ')
+    .replace(
+      /\b(sabse|sasta|saste|sasti|cheap|cheapest|budget|fast|quick|lowest price|top rated|quality|branded|accha|achha|acche|kam daam)\b|सबसे|सस्ता|सस्ते|बढ़िया/gi,
+      ' ',
+    )
     .replace(FILLER, ' ')
     .replace(/[,.!?₹]/g, ' ')
     .replace(/\s+/g, ' ')

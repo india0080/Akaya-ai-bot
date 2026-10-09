@@ -13,3 +13,10 @@ secrets/
 agents/*/backend/data/*.json
 .DS_Store
 *.log
+
+# signing keys, Firebase config and build artefacts (never commit)
+*.jks
+*.keystore
+google-services.json
+*.apk
+*.aab

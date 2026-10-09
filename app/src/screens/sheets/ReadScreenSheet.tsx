@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sheet } from '../../components/Sheet';
-import { Icon } from '../../components/Icon';
-import { Pearl } from '../../components/Pearl';
-import { useToast } from '../../components/Toast';
+import { Sheet, Icon, Pearl, useToast } from '@akaya/ui';
 import { useApp } from '../../state/store';
+import { draftFromText, useReminders } from '../../features/reminders';
 
 const SUMMARY = 'Electricity bill for September: ₹1,240 is due on 15 Oct. Usage is 12% lower than last month.';
 
 /** Read Screen demo: "captures" a sample screen, scans it, then explains it with actions. */
 export function ReadScreenSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [stage, setStage] = useState<'ready' | 'scan' | 'done'>('ready');
-  const { addToday } = useApp();
+  const { state } = useApp();
+  const reminders = useReminders();
   const toast = useToast();
   const nav = useNavigate();
   const [prevOpen, setPrevOpen] = useState(open);
@@ -86,10 +85,12 @@ export function ReadScreenSheet({ open, onClose }: { open: boolean; onClose: () 
             <button
               className="btn btn-primary btn-sm"
               onClick={() => {
-                const d = new Date();
-                d.setHours(19, 0, 0, 0);
-                addToday({ kind: 'reminder', title: 'Pay electricity bill ₹1,240', time: d.getTime() });
-                toast('Reminder added to Today', 'alarm');
+                const { draft } = draftFromText(
+                  'Pay electricity bill ₹1,240 tomorrow at 7 pm, important',
+                  state.settings.reminderLead,
+                  'form',
+                );
+                if (draft) void reminders.add({ ...draft, category: 'finance', alerts: [1440, 60, 0] });
               }}
             >
               <Icon name="alarm" size={14} /> Remind me

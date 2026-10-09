@@ -1,16 +1,18 @@
+import { disclosureText } from '@akaya/affiliate';
 import { useEffect, useState } from 'react';
 import { API, api } from '../api/client';
 import type { Preset, ProviderInfo } from '../api/types';
 import { useStore } from '../state';
-import { Segmented } from '../ui/Controls';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
+import { Segmented, Icon, Screen } from '@akaya/ui';
 
 export function More() {
   const { theme, preset, set, online } = useStore();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   useEffect(() => {
-    api.providers().then((p) => setProviders(p.providers), () => {});
+    api.providers().then(
+      (p) => setProviders(p.providers),
+      () => {},
+    );
   }, []);
   return (
     <Screen nav className="more">
@@ -51,7 +53,10 @@ export function More() {
             { value: 'quality', label: 'Quality' },
           ]}
         />
-        <p className="fine">Balanced weighs price 30%, rating 24%, delivery 18%, seller trust 16%, review volume 12%, then subtracts fake-review risk.</p>
+        <p className="fine">
+          Balanced weighs price 30%, rating 24%, delivery 18%, seller trust 16%, review volume 12%, then subtracts
+          fake-review risk.
+        </p>
       </div>
 
       <div className="sec-head">
@@ -67,11 +72,16 @@ export function More() {
               <b>{p.label}</b>
               <small>{p.kind === 'mock' ? 'Realistic sample data for demos' : p.setupHint}</small>
             </div>
-            <span className={`tag ${p.active ? (p.sampleData ? 'sample' : 'ok') : 'off'}`}>{p.active ? (p.sampleData ? 'Sample data' : 'Connected') : p.configured ? 'Ready' : 'Not connected'}</span>
+            <span className={`tag ${p.active ? (p.sampleData ? 'sample' : 'ok') : 'off'}`}>
+              {p.active ? (p.sampleData ? 'Sample data' : 'Connected') : p.configured ? 'Ready' : 'Not connected'}
+            </span>
           </div>
         ))}
       </div>
-      <p className="fine pad-x">Real providers need keys in .env (see docs/PROVIDERS.md). The browser fallback is off by default: it may break store terms and get blocked.</p>
+      <p className="fine pad-x">
+        Real providers need keys in .env (see docs/PROVIDERS.md). The browser fallback is off by default: it may break
+        store terms and get blocked.
+      </p>
 
       <div className="sec-head">
         <h3>How it works</h3>
@@ -92,10 +102,15 @@ export function More() {
           </span>
           <div className="grow">
             <b>Affiliate disclosure</b>
-            <small>Store links may carry an affiliate tag once configured.</small>
+            <small>{disclosureText({ style: 'long', platforms: ['amazon'] })}</small>
           </div>
         </div>
-        <a className="list-row" href={`${API || 'http://localhost:8787'}/docs`} target="_blank" rel="noopener noreferrer">
+        <a
+          className="list-row"
+          href={`${API || 'http://localhost:8787'}/docs`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <span className="ri">
             <Icon name="open" size={17} />
           </span>

@@ -1,11 +1,15 @@
-import { Icon } from '../ui/Icon';
-import { BADGES, STORE_COLORS } from '../lib/format';
+import { Icon } from '@akaya/ui';
+import { BADGES, storeMeta } from '../lib/format';
 import type { Badge, FakeRisk } from '../api/types';
 
 export function StoreMark({ store, size = 22 }: { store: string; size?: number }) {
-  const s = STORE_COLORS[store] ?? STORE_COLORS.other;
+  const s = storeMeta(store);
   return (
-    <span className="store-mark" style={{ background: s.color, width: size, height: size, fontSize: size * 0.42 }} aria-hidden="true">
+    <span
+      className="store-mark"
+      style={{ background: s.color, width: size, height: size, fontSize: size * 0.42 }}
+      aria-hidden="true"
+    >
       {s.mono}
     </span>
   );
@@ -38,7 +42,11 @@ export function RiskChip({ risk, compact = false }: { risk: FakeRisk; compact?: 
   return (
     <span className={`risk risk-${risk.level}`}>
       <Icon name={risk.level === 'low' ? 'shield' : 'alert'} size={11} strokeWidth={2.3} />
-      {risk.level === 'low' ? 'Reviews look genuine' : risk.level === 'medium' ? 'Some review red flags' : 'Fake-review risk'}
+      {risk.level === 'low'
+        ? 'Reviews look genuine'
+        : risk.level === 'medium'
+          ? 'Some review red flags'
+          : 'Fake-review risk'}
     </span>
   );
 }

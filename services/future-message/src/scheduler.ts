@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { CHANNELS, validateForChannel } from './channels.js';
-import { nextOccurrence } from './tz.js';
+import { nextOccurrence } from '@akaya/tz';
 import type { SendContext, SenderAdapter } from './adapters/types.js';
 import type { CredentialProvider } from './credentials.js';
 import type { JobQueue } from './queue/types.js';
@@ -49,7 +49,12 @@ export class Scheduler {
   }
 
   private ctx(creds: Record<string, string>): SendContext {
-    return { creds, fetch: this.d.fetch ?? fetch, now: this.now, sleep: this.d.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))) };
+    return {
+      creds,
+      fetch: this.d.fetch ?? fetch,
+      now: this.now,
+      sleep: this.d.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))),
+    };
   }
 
   validate(m: NewMessage): string[] {
@@ -110,7 +115,8 @@ export class Scheduler {
 
   async update(userId: string, id: string, patch: Partial<NewMessage>): Promise<ScheduledMessage> {
     const cur = await this.own(userId, id);
-    if (!['scheduled', 'failed', 'partial'].includes(cur.status)) throw new ValidationError([`cannot edit a message that is ${cur.status}`]);
+    if (!['scheduled', 'failed', 'partial'].includes(cur.status))
+      throw new ValidationError([`cannot edit a message that is ${cur.status}`]);
     const next = { ...cur, ...patch, results: {}, status: 'scheduled' as const, updatedAt: this.now() };
     const issues = this.validate(next);
     if (issues.length) throw new ValidationError(issues);
@@ -133,8 +139,10 @@ export class Scheduler {
   /** run failed channels again now */
   async retry(userId: string, id: string): Promise<ScheduledMessage> {
     const cur = await this.own(userId, id);
-    if (!['failed', 'partial'].includes(cur.status)) throw new ValidationError([`only failed messages can be retried (status: ${cur.status})`]);
-    for (const c of cur.channels) if (cur.results[c]?.status === 'failed') cur.results[c] = { ...cur.results[c]!, status: 'pending', attempts: 0 };
+    if (!['failed', 'partial'].includes(cur.status))
+      throw new ValidationError([`only failed messages can be retried (status: ${cur.status})`]);
+    for (const c of cur.channels)
+      if (cur.results[c]?.status === 'failed') cur.results[c] = { ...cur.results[c]!, status: 'pending', attempts: 0 };
     cur.status = 'scheduled';
     cur.updatedAt = this.now();
     await this.d.store.put(cur);
@@ -179,7 +187,13 @@ export class Scheduler {
       const attempts = prev.attempts + 1;
       try {
         const out = await adapter.send(msg, this.ctx(await this.d.creds.get(msg.userId, c)));
-        if (out.ok) msg.results[c] = { status: out.needsTap ? 'needs-tap' : 'sent', attempts, externalId: out.externalId, at: this.now() };
+        if (out.ok)
+          msg.results[c] = {
+            status: out.needsTap ? 'needs-tap' : 'sent',
+            attempts,
+            externalId: out.externalId,
+            at: this.now(),
+          };
         else {
           const canRetry = out.retryable && attempts < MAX_ATTEMPTS;
           retryable ||= canRetry;
@@ -188,7 +202,12 @@ export class Scheduler {
       } catch (e) {
         const canRetry = attempts < MAX_ATTEMPTS;
         retryable ||= canRetry;
-        msg.results[c] = { status: canRetry ? 'pending' : 'failed', attempts, error: e instanceof Error ? e.message : String(e), at: this.now() };
+        msg.results[c] = {
+          status: canRetry ? 'pending' : 'failed',
+          attempts,
+          error: e instanceof Error ? e.message : String(e),
+          at: this.now(),
+        };
       }
     }
 

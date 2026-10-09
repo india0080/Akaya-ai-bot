@@ -3,13 +3,18 @@ import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { jsonSchemaTransform, serializerCompiler, validatorCompiler, type ZodTypeProvider } from 'fastify-type-provider-zod';
+import {
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+  type ZodTypeProvider,
+} from 'fastify-type-provider-zod';
 import type { Config } from './config.js';
 import { buildProviders } from './providers/registry.js';
-import { TtlCache } from './services/cache.js';
-import { JobQueue } from './services/queue.js';
-import { JsonDb } from './services/db.js';
-import { NotificationService, type NotifState } from './services/notifications.js';
+import { TtlCache } from '@akaya/server-kit';
+import { JobQueue } from '@akaya/server-kit';
+import { JsonDb } from '@akaya/server-kit';
+import { NotificationService, type NotifState } from '@akaya/server-kit';
 import { SearchService } from './services/search.js';
 import { WatchlistService, type WatchState } from './services/watchlist.js';
 import { routes } from './routes/index.js';
@@ -52,13 +57,30 @@ export async function buildApp(cfg: Config, opts: { logger?: boolean; persist?: 
   const { all, active, wanted } = buildProviders(cfg);
   const cache = new TtlCache<never>(cfg.CACHE_TTL_SECONDS * 1000);
   const queue = new JobQueue(cfg.QUEUE_CONCURRENCY);
-  const db = new JsonDb<DbShape>(opts.persist === false ? null : cfg.DATA_FILE, { notifications: [], pushSubs: [], watchlist: [], recent: [] });
+  const db = new JsonDb<DbShape>(opts.persist === false ? null : cfg.DATA_FILE, {
+    notifications: [],
+    pushSubs: [],
+    watchlist: [],
+    recent: [],
+  });
   const notifications = new NotificationService(db, cfg, (m) => app.log.info(m));
   const search = new SearchService(cfg, active, cache, queue);
   const watchlist = new WatchlistService(db, search, notifications);
   if (opts.watchers !== false) watchlist.startChecker(cfg.PRICE_CHECK_INTERVAL_MS);
   app.addHook('onClose', async () => watchlist.stop());
 
-  await app.register(routes({ cfg, search, queue, watchlist, notifications, cache: cache as TtlCache<unknown>, allProviders: all, wanted, db }));
+  await app.register(
+    routes({
+      cfg,
+      search,
+      queue,
+      watchlist,
+      notifications,
+      cache: cache as TtlCache<unknown>,
+      allProviders: all,
+      wanted,
+      db,
+    }),
+  );
   return Object.assign(app, { services: { search, queue, watchlist, notifications, cache } });
 }

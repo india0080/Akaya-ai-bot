@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TtlCache } from '../src/services/cache.js';
-import { JobQueue } from '../src/services/queue.js';
+import { TtlCache } from '@akaya/server-kit';
+import { JobQueue } from '@akaya/server-kit';
 import { AmazonProvider } from '../src/providers/amazon.js';
-import { affiliateUrl } from '../src/engine/affiliate.js';
+import { offerLink, storeSearchUrl } from '../src/engine/affiliate.js';
 import { buildProviders } from '../src/providers/registry.js';
 import { loadConfig } from '../src/config.js';
 
@@ -69,10 +69,18 @@ describe('providers & affiliate', () => {
     const { all } = buildProviders(loadConfig({}));
     for (const p of all.filter((x) => x.kind !== 'mock')) expect(p.configured()).toBe(false);
   });
-  it('adds partner tags only when configured', () => {
-    const o = { store: 'amazon', url: 'https://www.amazon.in/s?k=bag' } as never;
-    expect(affiliateUrl(o, { AMAZON_PARTNER_TAG: undefined, FLIPKART_AFFILIATE_ID: undefined } as never)).toBe('https://www.amazon.in/s?k=bag');
-    expect(affiliateUrl(o, { AMAZON_PARTNER_TAG: 'akaya-21', FLIPKART_AFFILIATE_ID: undefined } as never)).toContain('tag=akaya-21');
+  it('builds store links with @akaya/affiliate: UTM always, partner tags only when configured', () => {
+    const o = { store: 'amazon', url: 'https://www.amazon.in/s?k=bag', title: 'Bag' } as const;
+    const plain = new URL(offerLink(o, {}));
+    expect(plain.searchParams.get('k')).toBe('bag');
+    expect(plain.searchParams.get('utm_source')).toBe('akaya');
+    expect(plain.searchParams.get('utm_campaign')).toBe('shopping-agent');
+    expect(plain.searchParams.has('tag')).toBe(false);
+    expect(new URL(offerLink(o, { AMAZON_TAG_IN: 'akaya-21' })).searchParams.get('tag')).toBe('akaya-21');
+    expect(new URL(offerLink({ store: 'flipkart', url: 'https://www.flipkart.com/search?q=bag', title: 'Bag' }, { FLIPKART_AFFILIATE_ID: 'akayafk' })).searchParams.get('affid')).toBe('akayafk');
+    // a URL on another host never gets a tag (falls back to a store search)
+    expect(new URL(offerLink({ store: 'amazon', url: 'https://evil.example/x', title: 'Bag' }, { AMAZON_TAG_IN: 'akaya-21' })).host).toBe('www.amazon.in');
+    expect(storeSearchUrl('reliance-digital', 'buds')).toBe('https://www.reliancedigital.in/search?q=buds');
   });
   it('Amazon Creators API: caches the OAuth token and sends the India marketplace', async () => {
     const calls: { url: string; init: RequestInit }[] = [];
@@ -81,7 +89,7 @@ describe('providers & affiliate', () => {
       if (url.includes('/auth/o2/token')) return new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }));
       return new Response(JSON.stringify({ searchResult: { items: [{ asin: 'B0TEST', detailPageURL: 'https://www.amazon.in/dp/B0TEST?tag=akaya-21', itemInfo: { title: { displayValue: 'Test Bag' } }, offersV2: { listings: [{ price: { money: { amount: 999 }, savingBasis: { money: { amount: 1499 } } } }] }, customerReviews: { count: 120, starRating: { value: 4.3 } } }] } }));
     }) as unknown as typeof fetch;
-    const cfg = loadConfig({ AMAZON_CREDENTIAL_ID: 'id', AMAZON_CREDENTIAL_SECRET: 'secret', AMAZON_PARTNER_TAG: 'akaya-21' });
+    const cfg = loadConfig({ AMAZON_CREDENTIAL_ID: 'id', AMAZON_CREDENTIAL_SECRET: 'secret', AMAZON_TAG_IN: 'akaya-21' });
     const p = new AmazonProvider(cfg, fake);
     expect(p.configured()).toBe(true);
     const offers = await p.search('school bag');

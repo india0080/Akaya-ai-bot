@@ -1,7 +1,5 @@
-import { Sheet } from '../../components/Sheet';
+import { Sheet, Icon, type IconName, Toggle } from '@akaya/ui';
 import './Sheets.css';
-import { Icon, type IconName } from '../../components/Icon';
-import { Toggle } from '../../components/Controls';
 import { useApp } from '../../state/store';
 import { relDay } from '../../lib/time';
 

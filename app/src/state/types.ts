@@ -1,4 +1,7 @@
-export type ThemePref = 'light' | 'dark' | 'system';
+import type { LinkAction } from '../commerce/chatIntent';
+import type { ThemePref } from '@akaya/ui';
+import type { Reminder } from '@akaya/reminders';
+export type { ThemePref };
 export type AIMode = 'on-device' | 'online';
 
 export interface Settings {
@@ -8,17 +11,20 @@ export interface Settings {
   notifications: boolean;
   /** preferred reply / UI language label */
   language: string;
-  /** minutes before a reminder to notify */
+  /** minutes before a reminder to notify (the default early alert for new reminders) */
   reminderLead: number;
+  /** missed one-off reminders get a follow-up reminder automatically (otherwise Akaya only suggests one) */
+  autoFollowUp: boolean;
   /** speech synthesis rate 0.75..1.5 */
   voiceSpeed: number;
   /** text scale 0.9..1.25 */
   textSize: number;
 }
 
+/** Calendar events and follow-ups shown in Today. Reminders live in `AppState.reminders` (v0.5). */
 export interface TodayItem {
   id: string;
-  kind: 'reminder' | 'calendar' | 'followup';
+  kind: 'calendar' | 'followup';
   title: string;
   time: number;
   done: boolean;
@@ -93,6 +99,10 @@ export interface ChatMessage {
   at: number;
   attachments?: Attachment[];
   modes?: ChatMode[];
+  /** store / travel / food / ride link card (detected from the user's message) */
+  action?: LinkAction;
+  /** reminder created from this message (chat card) */
+  reminderId?: string;
 }
 
 export interface Chat {
@@ -144,6 +154,7 @@ export interface AppState {
   user: { name: string; email: string; phone: string };
   settings: Settings;
   today: TodayItem[];
+  reminders: Reminder[];
   notes: Note[];
   future: FutureMessage[];
   activity: Activity[];

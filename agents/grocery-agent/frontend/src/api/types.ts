@@ -1,4 +1,4 @@
-export type StoreId = 'instamart' | 'blinkit' | 'zepto' | 'bigbasket' | 'amazonfresh';
+export type StoreId = 'instamart' | 'blinkit' | 'zepto' | 'bigbasket' | 'amazon-fresh';
 export type Unit = 'g' | 'ml' | 'pc';
 export type Strategy = 'cheapest' | 'fastest' | 'split' | 'balanced';
 
@@ -143,7 +143,8 @@ export interface Job<T, P = unknown> {
   error?: string;
   result?: T;
 }
-export type CartStatus = 'queued' | 'filling' | 'ready' | 'partial' | 'handed_off' | 'paid_by_user' | 'cancelled' | 'expired' | 'failed';
+export type CartStatus =
+  'queued' | 'filling' | 'ready' | 'partial' | 'handed_off' | 'paid_by_user' | 'cancelled' | 'expired' | 'failed';
 export interface Cart {
   store: StoreId;
   storeName: string;

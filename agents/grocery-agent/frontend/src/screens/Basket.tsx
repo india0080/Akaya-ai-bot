@@ -6,10 +6,7 @@ import { PayNotice, SampleTag, StoreMark } from '../components/bits';
 import { FeeTable } from '../components/FeeTable';
 import { SubSheet } from '../components/SubSheet';
 import { inr, STORES } from '../lib/format';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
-import { useToast } from '../ui/Toast';
+import { Icon, Screen, ScreenHeader, useToast } from '@akaya/ui';
 
 interface Group {
   itemId: string;
@@ -17,7 +14,8 @@ interface Group {
   lines: Line[];
   price: number;
 }
-const feeSum = (f: { delivery: number; handling: number; smallCart: number; platform: number }) => f.delivery + f.handling + f.smallCart + f.platform;
+const feeSum = (f: { delivery: number; handling: number; smallCart: number; platform: number }) =>
+  f.delivery + f.handling + f.smallCart + f.platform;
 
 export function Basket() {
   const { quoteId = '', planId = '' } = useParams();
@@ -62,7 +60,8 @@ export function Basket() {
       if (g) {
         g.lines.push(l);
         g.price += l.price;
-      } else groups.push({ itemId: l.itemId, item: q.items.find((i) => i.id === l.itemId), lines: [l], price: l.price });
+      } else
+        groups.push({ itemId: l.itemId, item: q.items.find((i) => i.id === l.itemId), lines: [l], price: l.price });
     }
     const live = groups.filter((g) => !removed.includes(g.itemId));
     const subtotal = live.reduce((a, g) => a + (over[g.itemId]?.price ?? g.price), 0);
@@ -73,7 +72,12 @@ export function Basket() {
 
   const fill = async () => {
     setBusy(true);
-    const overrides: Override[] = Object.entries(over).map(([itemId, a]) => ({ itemId, store: a.sku.store, skuId: a.sku.id, packs: a.packs }));
+    const overrides: Override[] = Object.entries(over).map(([itemId, a]) => ({
+      itemId,
+      store: a.sku.store,
+      skuId: a.sku.id,
+      packs: a.packs,
+    }));
     try {
       const c = await api.createCheckout({ quoteId: q.id, planId: plan.id, overrides, removed });
       nav(`/checkout/${c.id}`);
@@ -85,7 +89,11 @@ export function Basket() {
 
   return (
     <Screen className="basket">
-      <ScreenHeader title="Review basket" sub={`${plan.label} · ${plan.etaLabel}`} right={q.sample ? <SampleTag text="SAMPLE" /> : undefined} />
+      <ScreenHeader
+        title="Review basket"
+        sub={`${plan.label} · ${plan.etaLabel}`}
+        right={q.sample ? <SampleTag text="SAMPLE" /> : undefined}
+      />
       {parts.map((p) => (
         <section key={p.store} className="cart-part card">
           <header className="cp-head">
@@ -108,7 +116,9 @@ export function Basket() {
                 <span className="grow">
                   <b>{alt ? alt.sku.name : g.lines[0].sku.name}</b>
                   <small>
-                    {alt ? `${alt.packs} × ${alt.sku.sizeLabel}` : g.lines.map((l) => `${l.packs} × ${l.sku.sizeLabel}`).join(' + ')}
+                    {alt
+                      ? `${alt.packs} × ${alt.sku.sizeLabel}`
+                      : g.lines.map((l) => `${l.packs} × ${l.sku.sizeLabel}`).join(' + ')}
                     {g.item && <> · for {g.item.display}</>}
                   </small>
                   {sub && !gone && (
@@ -139,11 +149,14 @@ export function Basket() {
           <FeeTable subtotal={p.subtotal} fees={p.fees} total={p.subtotal ? p.total : 0} />
         </section>
       ))}
-      {changed && <p className="fine pad-x">Fees are estimated from the quote and re-checked when the cart is filled.</p>}
+      {changed && (
+        <p className="fine pad-x">Fees are estimated from the quote and re-checked when the cart is filled.</p>
+      )}
       <PayNotice store={plan.parts.length === 1 ? plan.parts[0].storeName : undefined} />
       <div className="cta-bar">
         <button className="btn btn-brand btn-block" disabled={busy || total === 0} onClick={() => void fill()}>
-          {busy ? <span className="spin" /> : <Icon name="cart" size={18} />} Fill {plan.parts.length > 1 ? `${plan.parts.length} carts` : 'cart'} · {inr(total)}
+          {busy ? <span className="spin" /> : <Icon name="cart" size={18} />} Fill{' '}
+          {plan.parts.length > 1 ? `${plan.parts.length} carts` : 'cart'} · {inr(total)}
         </button>
       </div>
       <SubSheet

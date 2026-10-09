@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Logo } from '../components/Logo';
-import { Icon } from '../components/Icon';
+import { Icon } from '@akaya/ui';
 import { useApp } from '../state/store';
 import { SlideAgents, SlideFloating, SlideFuture, SlideTranslate, SlideVoice } from './onboarding/Slides';
 import './Onboarding.css';

@@ -1,6 +1,4 @@
-import { Sheet } from '../../components/Sheet';
-import { Icon, type IconName } from '../../components/Icon';
-import { Toggle } from '../../components/Controls';
+import { Sheet, Icon, type IconName, Toggle } from '@akaya/ui';
 import type { ChatMode } from '../../state/types';
 
 export type PickKind =

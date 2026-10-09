@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
+import { Screen, Pearl, Icon } from '@akaya/ui';
 import { Logo } from '../components/Logo';
-import { Pearl } from '../components/Pearl';
-import { Icon } from '../components/Icon';
 import { GoogleLogo } from '../components/GoogleLogo';
 import { useApp } from '../state/store';
 import { EmailSignUpForm } from './auth/EmailSignUpForm';

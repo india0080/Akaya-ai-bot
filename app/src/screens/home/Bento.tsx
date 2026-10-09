@@ -1,8 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Pearl } from '../../components/Pearl';
-import { Icon, type IconName } from '../../components/Icon';
-import { Toggle } from '../../components/Controls';
-import { useToast } from '../../components/Toast';
+import { Pearl, Icon, type IconName, Toggle, useToast } from '@akaya/ui';
 import { useApp } from '../../state/store';
 
 function Tile({

@@ -4,10 +4,7 @@ import { api } from '../api/client';
 import type { SavedList } from '../api/types';
 import { ListSheet } from '../components/ListSheet';
 import { DAYS, hhmm12, inr, istWhen, STRATEGY } from '../lib/format';
-import { Toggle } from '../ui/Controls';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { useToast } from '../ui/Toast';
+import { Toggle, Icon, Screen, useToast } from '@akaya/ui';
 
 export function Lists() {
   const nav = useNavigate();
@@ -33,7 +30,14 @@ export function Lists() {
     }
   };
   const toggle = async (l: SavedList, enabled: boolean) => {
-    const schedule = { days: [6], time: '09:00', strategy: 'cheapest' as const, autoFill: true, ...l.schedule, enabled };
+    const schedule = {
+      days: [6],
+      time: '09:00',
+      strategy: 'cheapest' as const,
+      autoFill: true,
+      ...l.schedule,
+      enabled,
+    };
     const u = await api.updateList(l.id, { schedule });
     setLists((ls) => ls && ls.map((x) => (x.id === u.id ? u : x)));
   };
@@ -78,7 +82,8 @@ export function Lists() {
                     Every {l.schedule.days.map((d) => DAYS[d]).join(', ')} · {hhmm12(l.schedule.time)} IST
                   </b>
                   <small>
-                    {STRATEGY[l.schedule.strategy].label} · {l.schedule.autoFill ? 'fills cart, you pay' : 'compare & review'}
+                    {STRATEGY[l.schedule.strategy].label} ·{' '}
+                    {l.schedule.autoFill ? 'fills cart, you pay' : 'compare & review'}
                     {l.nextRunAt ? ` · next ${istWhen(l.nextRunAt)}` : ''}
                   </small>
                 </>
@@ -89,14 +94,20 @@ export function Lists() {
                 </>
               )}
             </span>
-            <Toggle on={!!l.schedule?.enabled} onChange={(v) => void toggle(l, v)} label={`Weekly schedule for ${l.name}`} />
+            <Toggle
+              on={!!l.schedule?.enabled}
+              onChange={(v) => void toggle(l, v)}
+              label={`Weekly schedule for ${l.name}`}
+            />
           </div>
           <button className="btn btn-ghost btn-block" disabled={running === l.id} onClick={() => void run(l)}>
             {running === l.id ? <span className="spin" /> : <Icon name="compare" size={16} />} Compare now
           </button>
         </section>
       ))}
-      <p className="fine center">Scheduled runs compare prices, can fill the cart, then notify you. Payment always waits for you.</p>
+      <p className="fine center">
+        Scheduled runs compare prices, can fill the cart, then notify you. Payment always waits for you.
+      </p>
       <ListSheet
         open={!!edit || creating}
         onClose={() => {

@@ -1,3 +1,5 @@
+import { messageLink } from '@akaya/affiliate';
+
 /**
  * Future Message channels. `appId` points at the integrations catalog (for the real logo).
  * `auto` is honest about what can send unattended:
@@ -24,8 +26,6 @@ export interface FMChannel {
   deeplink?: (to: string, text: string) => string;
 }
 
-const enc = encodeURIComponent;
-
 export const CHANNELS: FMChannel[] = [
   // Chats & email
   {
@@ -36,7 +36,7 @@ export const CHANNELS: FMChannel[] = [
     auto: 'tap',
     note: 'Personal WhatsApp has no official API: you get a notification and send with one tap.',
     recipient: 'Contact or phone',
-    deeplink: (_to, t) => `https://wa.me/?text=${enc(t)}`,
+    deeplink: (to, t) => messageLink('whatsapp', to, t),
   },
   {
     id: 'whatsapp-business',
@@ -118,7 +118,7 @@ export const CHANNELS: FMChannel[] = [
     auto: 'tap',
     note: 'No official API: one-tap send from a reminder.',
     recipient: 'Contact',
-    deeplink: (_to, t) => `sgnl://send?text=${enc(t)}`,
+    deeplink: (to, t) => messageLink('signal', to, t),
   },
   {
     id: 'sms',
@@ -128,7 +128,7 @@ export const CHANNELS: FMChannel[] = [
     auto: 'tap',
     note: 'Opens Messages pre-filled. Background SMS needs the default SMS app role.',
     recipient: 'Phone number',
-    deeplink: (to, t) => `sms:${to.replace(/[^\d+]/g, '')}?body=${enc(t)}`,
+    deeplink: (to, t) => messageLink('sms', to, t),
   },
   {
     id: 'discord',

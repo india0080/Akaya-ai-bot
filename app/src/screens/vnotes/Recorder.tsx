@@ -1,11 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../../components/Screen';
-import { ScreenHeader } from '../../components/ScreenHeader';
-import { Pearl } from '../../components/Pearl';
-import { Icon } from '../../components/Icon';
-import { useToast } from '../../components/Toast';
+import { Screen, ScreenHeader, Pearl, Icon, useToast } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { uid, fmtTime } from '../../lib/time';
 import { notesProvider, buildNotes, MODE_BY_ID } from '../../notes';

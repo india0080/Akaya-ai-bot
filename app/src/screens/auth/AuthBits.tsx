@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon, type IconName } from '@akaya/ui';
 import { auth, passwordStrength } from '../../auth';
 
 /** Shown on every auth screen when no Firebase config is present. */

@@ -5,11 +5,7 @@ import type { Cart, Checkout, FillProgress, Handoff } from '../api/types';
 import { PayNotice, SampleTag, StoreMark } from '../components/bits';
 import { HandoffSheet } from '../components/HandoffSheet';
 import { inr, STORES } from '../lib/format';
-import { Icon } from '../ui/Icon';
-import { Pearl } from '../ui/Pearl';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
-import { useToast } from '../ui/Toast';
+import { Icon, Pearl, Screen, ScreenHeader, useToast } from '@akaya/ui';
 
 const LIVE = ['ready', 'partial', 'handed_off'];
 
@@ -39,7 +35,9 @@ function CheckoutBody({ id }: { id: string }) {
   useEffect(() => {
     if (!jobId || !filling) return;
     const es = api.jobEvents(jobId);
-    es.addEventListener('progress', (e) => setSteps((s) => [...s, JSON.parse((e as MessageEvent).data) as FillProgress]));
+    es.addEventListener('progress', (e) =>
+      setSteps((s) => [...s, JSON.parse((e as MessageEvent).data) as FillProgress]),
+    );
     es.addEventListener('done', () => {
       es.close();
       window.setTimeout(() => void load(), 300);
@@ -97,7 +95,11 @@ function CheckoutBody({ id }: { id: string }) {
     const current = steps.at(-1)?.store ?? c.carts[0].store;
     return (
       <Screen className="checkout">
-        <ScreenHeader title="Filling your cart" sub={c.planLabel} right={c.sample ? <SampleTag text="SIMULATED" /> : undefined} />
+        <ScreenHeader
+          title="Filling your cart"
+          sub={c.planLabel}
+          right={c.sample ? <SampleTag text="SIMULATED" /> : undefined}
+        />
         <div className="filling">
           <Pearl width={170} height={150} r={50} mood="thinking" glow={1} />
           <h3>
@@ -113,7 +115,13 @@ function CheckoutBody({ id }: { id: string }) {
               .slice(-7)
               .map((s, i) => (
                 <div key={i} className={`fl-row ${s.step}`}>
-                  {s.step === 'added' ? <Icon name="check" size={14} /> : s.step === 'failed' ? <Icon name="close" size={14} /> : <span className="spin" />}
+                  {s.step === 'added' ? (
+                    <Icon name="check" size={14} />
+                  ) : s.step === 'failed' ? (
+                    <Icon name="close" size={14} />
+                  ) : (
+                    <span className="spin" />
+                  )}
                   <span>{s.name ?? s.message ?? s.step}</span>
                 </div>
               ))}
@@ -132,7 +140,11 @@ function CheckoutBody({ id }: { id: string }) {
 
   return (
     <Screen className="checkout">
-      <ScreenHeader title={live.length ? 'Ready to pay' : c.status === 'completed' ? 'Paid by you' : 'Checkout'} sub={c.planLabel} right={c.sample ? <SampleTag text="SAMPLE" /> : undefined} />
+      <ScreenHeader
+        title={live.length ? 'Ready to pay' : c.status === 'completed' ? 'Paid by you' : 'Checkout'}
+        sub={c.planLabel}
+        right={c.sample ? <SampleTag text="SAMPLE" /> : undefined}
+      />
       {live.length > 0 && (
         <section className="ready-hero">
           <span className="rh-ic">
@@ -179,7 +191,8 @@ function CheckoutBody({ id }: { id: string }) {
                 Cancel
               </button>
               <button className="btn btn-brand grow" disabled={busy === cart.store} onClick={() => void confirm(cart)}>
-                {busy === cart.store ? <span className="spin" /> : <Icon name="check" size={16} />} Confirm & pay in {STORES[cart.store].short}
+                {busy === cart.store ? <span className="spin" /> : <Icon name="check" size={16} />} Confirm & pay in{' '}
+                {STORES[cart.store].short}
               </button>
             </div>
           )}
@@ -198,11 +211,16 @@ function CheckoutBody({ id }: { id: string }) {
               <Icon name="truck" size={16} /> Track order
             </button>
           )}
-          {cart.status === 'expired' && <p className="ph-flag warn">The cart hold expired. Compare again to refresh prices.</p>}
+          {cart.status === 'expired' && (
+            <p className="ph-flag warn">The cart hold expired. Compare again to refresh prices.</p>
+          )}
         </section>
       ))}
       <PayNotice store={c.carts.length === 1 ? c.carts[0].storeName : undefined} />
-      <p className="fine pad-x">RBI rules require your own authentication (OTP / UPI PIN) for online payments, so payment always happens with you in the store app.</p>
+      <p className="fine pad-x">
+        RBI rules require your own authentication (OTP / UPI PIN) for online payments, so payment always happens with
+        you in the store app.
+      </p>
       {live.length > 0 && (
         <button className="btn btn-ghost btn-block cancel-all" onClick={() => void cancel()}>
           Cancel checkout

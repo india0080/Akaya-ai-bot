@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Akaya link-redirect
+  version: 0.5.0
+  description: |
+    Short links for affiliate / UTM-tracked store, travel and food links (go.akaya.one is a placeholder domain).
+    Targets are always built by @akaya/affiliate from a platform + intent, so the service only redirects to
+    known store hosts or configured affiliate-network wrappers. Every route except /go/{id}, /healthz and
+    /openapi.yaml needs `Authorization: Bearer <ADMIN_TOKEN>`.
+servers:
+  - url: https://go.akaya.one
+  - url: http://localhost:8790
+components:
+  securitySchemes:
+    admin:
+      type: http
+      scheme: bearer
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        issues: { type: array, items: { type: string } }
+        missing: { type: array, items: { type: string } }
+    LinkInput:
+      type: object
+      required: [platform, intent]
+      properties:
+        platform: { type: string, description: 'registry id, e.g. amazon, flipkart, booking, makemytrip, swiggy' }
+        intent: { type: string, enum: [home, search, product, hotel, flight, experience, food, grocery, cart, ride] }
+        params:
+          type: object
+          description: 'q, id, url, market, city, checkin, checkout, adults, from, to, date, dropoff, lat, lng'
+          additionalProperties: { oneOf: [{ type: string, maxLength: 500 }, { type: number }] }
+        campaign: { type: string, maxLength: 60, description: 'utm_campaign (default "general")' }
+        content: { type: string, maxLength: 60, description: 'utm_content and sub-id' }
+    ShortLink:
+      type: object
+      properties:
+        id: { type: string, pattern: '^[0-9A-Za-z]{7}$' }
+        shortUrl: { type: string, format: uri }
+        input: { $ref: '#/components/schemas/LinkInput' }
+        targetUrl: { type: string, format: uri }
+        affiliate:
+          type: object
+          properties:
+            active: { type: boolean }
+            via: { type: [string, 'null'], description: 'param:tag, network:cuelinks, …' }
+        createdAt: { type: integer, description: epoch ms }
+        clicks: { type: integer }
+    ImportResult:
+      type: object
+      properties:
+        source: { type: string }
+        rows: { type: integer }
+        added: { type: integer }
+        updated: { type: integer }
+    Report:
+      type: object
+      properties:
+        currency: { type: string }
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        totals:
+          type: object
+          properties:
+            clicks: { type: integer }
+            orders: { type: integer }
+            sales: { type: number }
+            commission: { type: number }
+            pending: { type: number }
+        platforms:
+          type: array
+          items:
+            type: object
+            properties:
+              platform: { type: string }
+              name: { type: string }
+              clicks: { type: integer }
+              orders: { type: integer }
+              sales: { type: number }
+              commission: { type: number }
+              conversion: { type: number, description: orders ÷ clicks }
+        otherCurrencyRows: { type: integer }
+paths:
+  /go/{id}:
+    get:
+      summary: Redirect (logs platform, campaign, hashed anonymous install id, timestamp)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: u, in: query, required: false, schema: { type: string }, description: 'anonymous install id (or X-Akaya-Anon header); stored only as an HMAC' }
+        - { name: X-Akaya-Anon, in: header, required: false, schema: { type: string } }
+      responses:
+        '302': { description: Redirect to the tracked URL, headers: { Location: { schema: { type: string } } } }
+        '404': { description: Unknown link }
+  /links:
+    post:
+      summary: Create a short link (identical input returns the existing link)
+      security: [{ admin: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LinkInput' } } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/ShortLink' } } } }
+        '200': { description: Existing link, content: { application/json: { schema: { $ref: '#/components/schemas/ShortLink' } } } }
+        '400': { description: Invalid input, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Params cannot build a link (e.g. a product URL on another host), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /links/{id}:
+    get:
+      summary: Link details with click count
+      security: [{ admin: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/ShortLink' } } } }
+        '404': { description: Not found }
+  /imports:
+    get:
+      summary: Available earnings importers
+      security: [{ admin: [] }]
+      responses: { '200': { description: 'source, label, csvHelp, apiEnv per importer' } }
+  /imports/{source}:
+    post:
+      summary: Upload a CSV export (amazon-associates, admitad, cuelinks, travelpayouts, booking)
+      security: [{ admin: [] }]
+      parameters: [{ name: source, in: path, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { text/csv: { schema: { type: string } } } }
+      responses:
+        '200': { description: Imported (upsert by source + transaction id), content: { application/json: { schema: { $ref: '#/components/schemas/ImportResult' } } } }
+        '422': { description: Unknown source or unreadable CSV, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /imports/{source}/sync:
+    post:
+      summary: Pull from the network's reporting API (stub)
+      security: [{ admin: [] }]
+      parameters: [{ name: source, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [from, to], properties: { from: { type: string, format: date }, to: { type: string, format: date } } } } }
+      responses:
+        '200': { description: Imported, content: { application/json: { schema: { $ref: '#/components/schemas/ImportResult' } } } }
+        '501': { description: Not configured / not implemented yet (lists missing env vars), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /reports:
+    get:
+      summary: Clicks, orders and commission per platform
+      security: [{ admin: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: currency, in: query, schema: { type: string, default: INR } }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Report' } } } }
+  /healthz:
+    get:
+      summary: Liveness
+      responses: { '200': { description: OK } }

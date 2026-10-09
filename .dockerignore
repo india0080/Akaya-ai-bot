@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/dist-standalone
+**/dev-dist
+**/.env
+**/.env.*
+!**/.env.example
+**/data/*.json
+.git
+app/android
+design
+marketing
+**/*.mp4

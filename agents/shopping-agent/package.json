@@ -4,12 +4,13 @@
   "version": "0.1.0",
   "description": "Akaya Shopping Agent: multi-store product search, ranking, compare, price history and price alerts (India). Runs on Mock sample data out of the box.",
   "scripts": {
-    "postinstall": "npm --prefix backend install && npm --prefix frontend install",
-    "dev": "node scripts/dev.mjs",
+    "dev": "node ../../scripts/agent-dev.mjs",
     "test": "npm --prefix backend test",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "lint": "npm --prefix frontend run lint && npm --prefix backend run typecheck",
     "openapi": "npm --prefix backend run openapi"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

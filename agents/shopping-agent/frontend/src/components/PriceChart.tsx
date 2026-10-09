@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { History } from '../api/types';
-import { inr, STORE_COLORS } from '../lib/format';
+import { inr, storeMeta } from '../lib/format';
 
 const W = 330;
 const H = 150;
@@ -19,7 +19,8 @@ export function PriceChart({ h }: { h: History }) {
   const n = Math.max(...h.series.map((s) => s.points.length));
   const x = (i: number) => P.l + (i / Math.max(1, n - 1)) * (W - P.l - P.r);
   const y = (v: number) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
-  const path = (pts: { price: number }[]) => pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join('');
+  const path = (pts: { price: number }[]) =>
+    pts.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.price).toFixed(1)}`).join('');
   const main = h.series[0];
   const area = `${path(main.points)}L${x(main.points.length - 1)},${H - P.b}L${x(0)},${H - P.b}Z`;
   const yAvg = y(h.stats.avg);
@@ -58,7 +59,7 @@ export function PriceChart({ h }: { h: History }) {
               key={s.store}
               d={path(s.points)}
               fill="none"
-              stroke={si === h.series.length - 1 ? 'var(--violet)' : (STORE_COLORS[s.store]?.color ?? '#888')}
+              stroke={si === h.series.length - 1 ? 'var(--violet)' : storeMeta(s.store).color}
               strokeWidth={si === h.series.length - 1 ? 2.4 : 1.5}
               strokeOpacity={si === h.series.length - 1 ? 1 : 0.55}
               strokeLinejoin="round"
@@ -85,7 +86,7 @@ export function PriceChart({ h }: { h: History }) {
       <div className="legend">
         {h.series.map((s, i) => (
           <span key={s.store}>
-            <i style={{ background: i === 0 ? 'var(--violet)' : STORE_COLORS[s.store]?.color }} />
+            <i style={{ background: i === 0 ? 'var(--violet)' : storeMeta(s.store).color }} />
             {s.storeName}
           </span>
         ))}
@@ -99,12 +100,22 @@ export function Sparkline({ points: raw, w = 86, h = 30 }: { points: number[]; w
   const min = Math.min(...points);
   const max = Math.max(...points);
   const d = points
-    .map((v, i) => `${i ? 'L' : 'M'}${((i / (points.length - 1)) * w).toFixed(1)},${(h - 3 - ((v - min) / (max - min || 1)) * (h - 6)).toFixed(1)}`)
+    .map(
+      (v, i) =>
+        `${i ? 'L' : 'M'}${((i / (points.length - 1)) * w).toFixed(1)},${(h - 3 - ((v - min) / (max - min || 1)) * (h - 6)).toFixed(1)}`,
+    )
     .join('');
   const down = points[points.length - 1] < points[0];
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-      <path d={d} fill="none" stroke={down ? 'var(--green)' : 'var(--violet)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d={d}
+        fill="none"
+        stroke={down ? 'var(--green)' : 'var(--violet)'}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

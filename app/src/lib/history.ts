@@ -1,5 +1,7 @@
 /** Builds the unified History feed from app state (chats, voice, floating, translations, reminders, notes…). */
-import type { IconName } from '../components/Icon';
+import type { IconName } from '@akaya/ui';
+import { reminderView } from '@akaya/reminders';
+import { fmtWhen } from '@akaya/tz';
 import type { AppState } from '../state/types';
 import { fmtDate, fmtTime } from './time';
 import { MODE_BY_ID } from '../notes/modes';
@@ -87,11 +89,24 @@ export function buildHistory(s: AppState): HistoryItem[] {
     out.push({
       key: `today:${t.id}`,
       type,
-      title: t.kind === 'calendar' ? 'Event added' : type === 'followup' ? 'Follow-up' : 'Reminder set',
+      title: t.kind === 'calendar' ? 'Event added' : 'Follow-up',
       preview: `${t.title} · ${dayGroup(t.time) === 'Today' ? 'today' : fmtDate(t.time)}, ${fmtTime(t.time)}`,
       at: t.createdAt ?? Math.min(t.time, Date.now()),
       meta: t.done ? 'Done' : t.kind === 'calendar' ? 'Calendar' : undefined,
       to: `/home?sheet=today&kind=${t.kind}`,
+    });
+  }
+  for (const r of s.reminders) {
+    if (r.sample) continue;
+    const v = reminderView(r, Date.now());
+    out.push({
+      key: `rem:${r.id}`,
+      type: 'reminder',
+      title: r.source === 'follow-up' ? 'Follow-up set' : 'Reminder set',
+      preview: `${r.title} · ${fmtWhen(r.due)}`,
+      at: r.createdAt,
+      meta: v === 'completed' ? 'Done' : v === 'missed' ? 'Missed' : undefined,
+      to: `/reminders?id=${r.id}`,
     });
   }
   for (const n of s.notes) {

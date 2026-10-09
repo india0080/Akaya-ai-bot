@@ -1,4 +1,4 @@
-import { Icon, type IconName } from '../../components/Icon';
+import { Icon, type IconName } from '@akaya/ui';
 import { AppTile } from '../../components/AppTile';
 import { APP_BY_ID } from '../../integrations/catalog';
 import { humanSize } from '../../lib/media';

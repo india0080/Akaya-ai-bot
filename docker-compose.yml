@@ -1,0 +1,28 @@
+# Akaya back-end services. docker compose up --build   (Compose v2.20+ for `include`)
+# Images build from the repo root with the shared recipes in docker/. Each service reads its own .env if present.
+include:
+  - agents/shopping-agent/docker-compose.yml # UI :5174, API :8787
+  - agents/grocery-agent/docker-compose.yml # UI :5175, API :8788
+
+services:
+  link-redirect:
+    build:
+      context: .
+      dockerfile: docker/node-service.Dockerfile
+      args: { WORKSPACE: '@akaya/link-redirect', DIR: services/link-redirect, ENTRY: dist/server.js }
+    ports: ['8790:8790']
+    env_file:
+      - path: services/link-redirect/.env
+        required: false
+    environment:
+      PORT: 8790
+      PUBLIC_BASE_URL: ${LINK_PUBLIC_BASE_URL:-https://go.akaya.one}
+      DATA_FILE: /data/links.json
+    volumes: ['link-data:/data']
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8790/healthz']
+      interval: 10s
+      retries: 5
+
+volumes:
+  link-data:

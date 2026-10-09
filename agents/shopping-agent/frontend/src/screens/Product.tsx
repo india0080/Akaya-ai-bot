@@ -6,11 +6,8 @@ import { BadgeChip, RiskChip, SampleTag, Stars, StoreMark } from '../components/
 import { PriceChart } from '../components/PriceChart';
 import { WatchSheet } from '../components/WatchSheet';
 import { days, inr } from '../lib/format';
-import { Segmented } from '../ui/Controls';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
-import { useToast } from '../ui/Toast';
+import { disclosureText } from '@akaya/affiliate';
+import { Segmented, Icon, Screen, ScreenHeader, useToast } from '@akaya/ui';
 
 export function Product() {
   const { key = '' } = useParams();
@@ -36,14 +33,29 @@ function ProductInner({ pkey }: { pkey: string }) {
 
   useEffect(() => {
     api.product(pkey).then(setP, (e: Error) => setErr(e.message));
-    api.watchlist().then((w) => setWatching(w.find((x) => x.productKey === pkey) ?? null), () => {});
+    api.watchlist().then(
+      (w) => setWatching(w.find((x) => x.productKey === pkey) ?? null),
+      () => {},
+    );
   }, [pkey]);
   useEffect(() => {
     api.history(pkey, Number(range)).then(setHist, () => {});
   }, [pkey, range]);
 
-  if (err) return <Screen><ScreenHeader title="Product" /><div className="empty">{err}</div></Screen>;
-  if (!p) return <Screen><ScreenHeader title="Product" /><div className="empty">Loading…</div></Screen>;
+  if (err)
+    return (
+      <Screen>
+        <ScreenHeader title="Product" />
+        <div className="empty">{err}</div>
+      </Screen>
+    );
+  if (!p)
+    return (
+      <Screen>
+        <ScreenHeader title="Product" />
+        <div className="empty">Loading…</div>
+      </Screen>
+    );
   const b = p.best;
   const h = b.histogram;
 
@@ -53,7 +65,11 @@ function ProductInner({ pkey }: { pkey: string }) {
         title={p.brand}
         sub={`${p.offers.length} store${p.offers.length > 1 ? 's' : ''} compared`}
         right={
-          <button className={`icon-btn card${watching ? ' on-heart' : ''}`} onClick={() => setSheet(true)} aria-label={watching ? 'Edit price alert' : 'Watch price'}>
+          <button
+            className={`icon-btn card${watching ? ' on-heart' : ''}`}
+            onClick={() => setSheet(true)}
+            aria-label={watching ? 'Edit price alert' : 'Watch price'}
+          >
             <Icon name="heart" size={19} fill={!!watching} />
           </button>
         }
@@ -99,10 +115,17 @@ function ProductInner({ pkey }: { pkey: string }) {
           </span>
           {b.delivery.cod && <span>COD</span>}
         </div>
-        <a className="btn btn-primary btn-block" href={b.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored">
+        <a
+          className="btn btn-primary btn-block"
+          href={b.affiliateUrl}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+        >
           Buy on {b.storeName} <Icon name="external" size={16} />
         </a>
-        <p className="fine">Opens {b.storeName}. Akaya never checks out or pays for you. Affiliate links may earn Akaya a commission when configured.</p>
+        <p className="fine">
+          {disclosureText()}. Opens {b.storeName}; Akaya never checks out or pays for you.
+        </p>
       </section>
 
       <div className="sec-head">
@@ -146,7 +169,8 @@ function ProductInner({ pkey }: { pkey: string }) {
         )}
       </section>
       <button className="btn btn-outline btn-block watch-cta" onClick={() => setSheet(true)}>
-        <Icon name="bell" size={17} /> {watching ? `Alert at ${inr(watching.targetPrice ?? watching.currentPrice)}: edit` : 'Set a price alert'}
+        <Icon name="bell" size={17} />{' '}
+        {watching ? `Alert at ${inr(watching.targetPrice ?? watching.currentPrice)}: edit` : 'Set a price alert'}
       </button>
 
       <div className="sec-head">
@@ -161,7 +185,8 @@ function ProductInner({ pkey }: { pkey: string }) {
                 {o.storeName} {o.id === b.id && <span className="tag best-tag">Best</span>}
               </b>
               <small>
-                {o.seller.name} · {days(o.delivery.days)} · {o.rating}★{o.fakeRisk.level !== 'low' ? ` · ${o.fakeRisk.level} review risk` : ''}
+                {o.seller.name} · {days(o.delivery.days)} · {o.rating}★
+                {o.fakeRisk.level !== 'low' ? ` · ${o.fakeRisk.level} review risk` : ''}
                 {!o.inStock ? ' · out of stock' : ''}
               </small>
             </div>
@@ -227,7 +252,10 @@ function ProductInner({ pkey }: { pkey: string }) {
             ))}
           </ul>
         ) : (
-          <p className="muted small">No red flags: rating spread, verified share ({Math.round((b.verifiedShare ?? 0) * 100)}%) and review pace look normal.</p>
+          <p className="muted small">
+            No red flags: rating spread, verified share ({Math.round((b.verifiedShare ?? 0) * 100)}%) and review pace
+            look normal.
+          </p>
         )}
         <p className="fine">Heuristic signals, not proof. Verify reviews on the store before buying.</p>
       </section>

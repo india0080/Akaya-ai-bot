@@ -5,10 +5,7 @@ import type { ParsedItem } from '../api/types';
 import { ListSheet } from '../components/ListSheet';
 import { DOZEN, formatQty, inr, stepFor } from '../lib/format';
 import { useStore, type Draft } from '../state';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
-import { useToast } from '../ui/Toast';
+import { Icon, Screen, ScreenHeader, useToast } from '@akaya/ui';
 
 const LANG = { en: 'English', hi: 'हिन्दी', hinglish: 'Hinglish' } as const;
 
@@ -29,7 +26,9 @@ function ItemsBody({ draft }: { draft: Draft }) {
   const items = draft.items;
 
   const update = (id: string, fn: (i: ParsedItem) => ParsedItem | null) =>
-    setDraft((d) => d && { ...d, items: d.items.map((i) => (i.id === id ? fn(i) : i)).filter((x): x is ParsedItem => !!x) });
+    setDraft(
+      (d) => d && { ...d, items: d.items.map((i) => (i.id === id ? fn(i) : i)).filter((x): x is ParsedItem => !!x) },
+    );
   const bump = (it: ParsedItem, dir: 1 | -1) =>
     update(it.id, (i) => {
       const step = stepFor(i.key, dir < 0 ? i.qty - 1 : i.qty, i.unit);
@@ -51,7 +50,12 @@ function ItemsBody({ draft }: { draft: Draft }) {
       const next = [...d.items];
       for (const it of r.items) {
         const same = next.findIndex((x) => x.key === it.key && x.brand === it.brand && x.variant === it.variant);
-        if (same >= 0) next[same] = { ...next[same], qty: next[same].qty + it.qty, display: formatQty(next[same].qty + it.qty, it.unit, DOZEN.has(it.key)) };
+        if (same >= 0)
+          next[same] = {
+            ...next[same],
+            qty: next[same].qty + it.qty,
+            display: formatQty(next[same].qty + it.qty, it.unit, DOZEN.has(it.key)),
+          };
         else next.push({ ...it, id: `i${++n}-${Date.now() % 1000}` });
       }
       return { ...d, items: next, unknown: [...d.unknown, ...r.unknown] };
@@ -68,7 +72,12 @@ function ItemsBody({ draft }: { draft: Draft }) {
       setBusy(false);
     }
   };
-  const asText = items.map((i) => `${i.display} ${i.brand ? `${i.brand} ` : ''}${i.variant ? `${i.variant.split('|')[0]} ` : ''}${i.name.replace(/\s*\(.*\)/, '').toLowerCase()}`).join(', ');
+  const asText = items
+    .map(
+      (i) =>
+        `${i.display} ${i.brand ? `${i.brand} ` : ''}${i.variant ? `${i.variant.split('|')[0]} ` : ''}${i.name.replace(/\s*\(.*\)/, '').toLowerCase()}`,
+    )
+    .join(', ');
 
   return (
     <Screen className="items">
@@ -113,7 +122,12 @@ function ItemsBody({ draft }: { draft: Draft }) {
         ))}
         <form className="add-row" onSubmit={addItems}>
           <Icon name="plus" size={16} />
-          <input value={add} onChange={(e) => setAdd(e.target.value)} placeholder="Add more: “1 kg aloo, dhaniya”" aria-label="Add items" />
+          <input
+            value={add}
+            onChange={(e) => setAdd(e.target.value)}
+            placeholder="Add more: “1 kg aloo, dhaniya”"
+            aria-label="Add items"
+          />
           {add && <button className="btn btn-sm btn-ghost">Add</button>}
         </form>
       </div>
@@ -122,7 +136,8 @@ function ItemsBody({ draft }: { draft: Draft }) {
         <div className="notice">
           <Icon name="alert" size={16} />
           <span>
-            Not in the sample catalogue, so skipped: <b>{draft.unknown.join(', ')}</b>. Add them in the store app after the cart is filled.
+            Not in the sample catalogue, so skipped: <b>{draft.unknown.join(', ')}</b>. Add them in the store app after
+            the cart is filled.
           </span>
         </div>
       )}
@@ -141,12 +156,17 @@ function ItemsBody({ draft }: { draft: Draft }) {
             <input
               inputMode="numeric"
               value={draft.budget ?? ''}
-              onChange={(e) => setDraft((d) => d && { ...d, budget: Number(e.target.value.replace(/\D/g, '')) || undefined })}
+              onChange={(e) =>
+                setDraft((d) => d && { ...d, budget: Number(e.target.value.replace(/\D/g, '')) || undefined })
+              }
               aria-label="Budget in rupees"
             />
           </span>
         ) : (
-          <button className="chip" onClick={() => (setBudgetOn(true), setDraft((d) => d && { ...d, budget: d.budget ?? 800 }))}>
+          <button
+            className="chip"
+            onClick={() => (setBudgetOn(true), setDraft((d) => d && { ...d, budget: d.budget ?? 800 }))}
+          >
             Set {inr(draft.budget ?? 800)}
           </button>
         )}
@@ -157,7 +177,12 @@ function ItemsBody({ draft }: { draft: Draft }) {
           {busy ? <span className="spin" /> : <Icon name="compare" size={18} />} Compare 5 stores
         </button>
       </div>
-      <ListSheet open={save} onClose={() => setSave(false)} initial={{ name: 'Weekly staples', emoji: '🧺', text: asText, budget: budgetOn ? draft.budget : undefined }} onSaved={() => toast('List saved', 'check')} />
+      <ListSheet
+        open={save}
+        onClose={() => setSave(false)}
+        initial={{ name: 'Weekly staples', emoji: '🧺', text: asText, budget: budgetOn ? draft.budget : undefined }}
+        onSaved={() => toast('List saved', 'check')}
+      />
     </Screen>
   );
 }

@@ -7,9 +7,9 @@ import { randomUUID } from 'node:crypto';
 import { parseList } from '../engine/listParser.js';
 import type { Strategy, StoreId } from '../types.js';
 import type { CheckoutService } from './checkout.js';
-import type { JsonDb } from './db.js';
-import type { NotificationService } from './notifications.js';
-import type { JobQueue } from './queue.js';
+import type { JsonDb } from '@akaya/server-kit';
+import type { NotificationService } from '@akaya/server-kit';
+import type { JobQueue } from '@akaya/server-kit';
 import type { Quote, QuoteService } from './quotes.js';
 
 export interface Schedule {
@@ -87,14 +87,31 @@ export class ListService {
   get(userId: string, id: string) {
     return this.db.data.lists.find((l) => l.userId === userId && l.id === id);
   }
-  create(userId: string, b: Pick<SavedList, 'name' | 'text'> & Partial<Pick<SavedList, 'emoji' | 'budget' | 'schedule'>>) {
-    const l: SavedList = { id: randomUUID(), userId, emoji: b.emoji ?? '🛒', name: b.name, text: b.text, budget: b.budget, schedule: b.schedule, createdAt: Date.now(), updatedAt: Date.now() };
+  create(
+    userId: string,
+    b: Pick<SavedList, 'name' | 'text'> & Partial<Pick<SavedList, 'emoji' | 'budget' | 'schedule'>>,
+  ) {
+    const l: SavedList = {
+      id: randomUUID(),
+      userId,
+      emoji: b.emoji ?? '🛒',
+      name: b.name,
+      text: b.text,
+      budget: b.budget,
+      schedule: b.schedule,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
     l.nextRunAt = l.schedule ? nextRun(l.schedule) : undefined;
     this.db.data.lists.push(l);
     this.db.save();
     return l;
   }
-  update(userId: string, id: string, patch: Partial<Pick<SavedList, 'name' | 'text' | 'emoji' | 'budget' | 'schedule'>>) {
+  update(
+    userId: string,
+    id: string,
+    patch: Partial<Pick<SavedList, 'name' | 'text' | 'emoji' | 'budget' | 'schedule'>>,
+  ) {
     const l = this.get(userId, id);
     if (!l) return null;
     Object.assign(l, patch, { updatedAt: Date.now() });
@@ -128,7 +145,15 @@ export class ListService {
     const l = this.get(userId, id);
     if (!l) return null;
     const st = this.settings(userId);
-    const quote = await this.waitJob<Quote>(this.quotes.start({ text: l.text, pincode: st.pincode, address: st.address, budget: l.budget ?? st.budget, stores: st.stores }));
+    const quote = await this.waitJob<Quote>(
+      this.quotes.start({
+        text: l.text,
+        pincode: st.pincode,
+        address: st.address,
+        budget: l.budget ?? st.budget,
+        stores: st.stores,
+      }),
+    );
     l.lastRunAt = Date.now();
     l.lastQuoteId = quote.id;
     if (l.schedule) l.nextRunAt = nextRun(l.schedule);

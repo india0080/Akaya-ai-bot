@@ -1,4 +1,4 @@
-import type { IconName } from '../components/Icon';
+import type { IconName } from '@akaya/ui';
 import type { NoteModeId } from './types';
 
 export interface NoteMode {

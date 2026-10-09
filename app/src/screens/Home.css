@@ -205,55 +205,188 @@
   opacity: 0.9;
 }
 
-/* ---------- today ---------- */
-.today {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+/* ---------- today slider ---------- */
+.today-slider {
+  padding-top: 2px;
+  padding-bottom: 10px;
+}
+.tdy {
+  --tc: var(--orange);
+  --tb: var(--tint-orange);
+  flex: none;
+  width: 236px;
+  min-height: 196px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
-  margin: 0 16px;
-}
-.tc {
-  border-radius: 18px;
-  padding: 11px 10px;
+  padding: 14px;
+  border-radius: 22px;
   text-align: left;
-  transition: transform 0.15s;
+  position: relative;
+  overflow: hidden;
 }
-.tc:active {
-  transform: scale(0.97);
+.tdy::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--tb);
+  pointer-events: none;
 }
-.tc-top {
+.tdy:active {
+  transform: scale(0.98);
+}
+.tdy.t-blue {
+  --tc: var(--blue);
+  --tb: var(--tint-blue);
+}
+.tdy.t-green {
+  --tc: var(--green-text);
+  --tb: var(--tint-green);
+}
+.tdy.t-pink {
+  --tc: var(--pink);
+  --tb: rgba(224, 69, 143, 0.12);
+}
+.tdy.t-violet {
+  --tc: var(--violet);
+  --tb: var(--tint-violet);
+}
+.tdy.t-cyan {
+  --tc: var(--cyan);
+  --tb: var(--tint-cyan);
+}
+.tdy.t-red {
+  --tc: #e5484d;
+  --tb: rgba(229, 72, 77, 0.12);
+}
+[data-theme='dark'] .tdy.t-violet {
+  --tc: #b99bff;
+}
+.tdy-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
 }
-.tc-ic {
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
+.tdy-top b {
+  font-size: 0.8rem;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tdy-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--tb);
+  color: var(--tc);
 }
-.tc-n {
+.tdy-badge {
+  margin-left: auto;
+  align-self: center;
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  font-size: 0.58rem;
   font-weight: 800;
-  font-size: 1.3rem;
+  padding: 3px 7px;
+  border-radius: 99px;
+  background: var(--g-orange);
+  color: #fff;
+}
+.tdy-n {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 1.9rem;
   letter-spacing: -0.03em;
+  color: var(--tc);
+  line-height: 1;
 }
-.tc b {
-  display: block;
-  font-size: 0.8rem;
-  margin-top: 7px;
-}
-.tc small {
-  display: block;
-  font-size: 0.66rem;
+.tdy-n small {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0;
   color: var(--text-2);
-  margin-top: 2px;
-  line-height: 1.35;
+}
+.tdy-bar {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+}
+.tdy-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--tc);
+  transition: width 0.4s;
+}
+.tdy-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.tdy-items > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.tdy-items em {
+  font-style: normal;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.tdy-items small {
+  flex: none;
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.tdy-items .tdy-empty {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.tdy-go {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.66rem;
+  font-weight: 800;
+  color: var(--tc);
+  background: var(--tb);
+  padding: 4px 10px;
+  border-radius: 99px;
 }
 
 /* ---------- slider ---------- */

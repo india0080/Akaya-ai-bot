@@ -1,10 +1,18 @@
 import type { ParsedItem, StoreQuote } from '../api/types';
 import { inr } from '../lib/format';
-import { Sheet } from '../ui/Sheet';
+import { Sheet } from '@akaya/ui';
 import { FeeTable } from './FeeTable';
 import { StoreMark } from './bits';
 
-export function StoreSheet({ quote, items, onClose }: { quote: StoreQuote | null; items: ParsedItem[]; onClose: () => void }) {
+export function StoreSheet({
+  quote,
+  items,
+  onClose,
+}: {
+  quote: StoreQuote | null;
+  items: ParsedItem[];
+  onClose: () => void;
+}) {
   return (
     <Sheet
       open={!!quote}

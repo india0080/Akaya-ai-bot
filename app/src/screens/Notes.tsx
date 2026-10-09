@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
-import { useToast } from '../components/Toast';
+import { Screen, ScreenHeader, Icon, useToast } from '@akaya/ui';
 import { useApp } from '../state/store';
 import { relDay } from '../lib/time';
 import type { Note } from '../state/types';

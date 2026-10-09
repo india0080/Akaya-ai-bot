@@ -1,6 +1,7 @@
 /** Sample data and mock AI behaviour. Replace with real APIs in production. */
 import type { AppState, ChatMessage } from '../state/types';
 import { uid } from './time';
+import { sampleReminders } from '../features/reminders/sample';
 import { APPS } from '../integrations/catalog';
 import { buildNotes } from '../notes/mockProvider';
 import { SEED_CALCULUS, SEED_IDEAS, SEED_SALES, toSegments, type ScriptLine } from '../notes/scripts';
@@ -118,20 +119,11 @@ export function initialState(): AppState {
       notifications: true,
       language: 'English',
       reminderLead: 10,
+      autoFollowUp: false,
       voiceSpeed: 1,
       textSize: 1,
     },
     today: [
-      { id: 't1', kind: 'reminder', title: 'Call Rahul', time: today(17), done: false, createdAt: today(8, 5) },
-      {
-        id: 't2',
-        kind: 'reminder',
-        title: 'Pay electricity bill',
-        time: today(19, 30),
-        done: false,
-        createdAt: daysAgo(1, 19, 40),
-      },
-      { id: 't3', kind: 'reminder', title: 'Pick up medicines', time: today(20), done: false, createdAt: today(7, 30) },
       {
         id: 't4',
         kind: 'calendar',
@@ -165,6 +157,7 @@ export function initialState(): AppState {
         createdAt: daysAgo(1, 16, 20),
       },
     ],
+    reminders: sampleReminders(),
     notes: [
       {
         id: 'n1',

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api } from './api/client';
 import { NotifBanner } from './components/NotifBanner';
-import { VoiceSheet } from './components/VoiceSheet';
 import { VOICE_DEMOS } from './lib/examples';
 import { Basket } from './screens/Basket';
 import { CheckoutScreen } from './screens/Checkout';
@@ -14,12 +13,15 @@ import { OrderScreen } from './screens/Order';
 import { Orders } from './screens/Orders';
 import { SettingsScreen } from './screens/Settings';
 import { useStore } from './state';
-import { useThemeSync } from './theme/useThemeSync';
-import { BottomNav } from './ui/BottomNav';
-import { DeviceHostContext } from './ui/deviceHost';
-import { StatusBar } from './ui/StatusBar';
-import { ToastProvider } from './ui/Toast';
-import { useShowStatusBar } from './ui/useShowStatusBar';
+import {
+  useThemeSync,
+  BottomNav,
+  DeviceHostContext,
+  StatusBar,
+  ToastProvider,
+  useShowStatusBar,
+  VoiceSheet,
+} from '@akaya/ui';
 
 const TABS = ['/home', '/lists', '/orders', '/settings'];
 
@@ -69,6 +71,8 @@ export function App() {
             )}
             <NotifBanner />
             <VoiceSheet
+              title="Speak your list"
+              hint='Try "do kilo aata, ek litre doodh aur chhe ande"'
               open={voice}
               onClose={() => setVoice(false)}
               demos={VOICE_DEMOS}

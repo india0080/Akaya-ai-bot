@@ -1,0 +1,26 @@
+{
+  "name": "@akaya/affiliate",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Deep links + affiliate tagging + UTM for every platform Akaya opens (stores, travel, food, grocery, rides, messaging). One registry, zero runtime dependencies.",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@akaya/config": "*",
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  }
+}

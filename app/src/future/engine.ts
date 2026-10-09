@@ -5,7 +5,7 @@
  */
 import type { FMResult, FMStatus, FutureMessage } from '../state/types';
 import { CHANNEL_BY_ID } from './channels';
-import { fmtWhen, nextOccurrence } from './tz';
+import { fmtWhen, nextOccurrence } from '@akaya/tz';
 
 export const DEMO_FAIL_TAG = '#fail';
 

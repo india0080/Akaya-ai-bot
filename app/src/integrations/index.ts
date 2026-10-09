@@ -17,4 +17,4 @@ function create(): IntegrationProvider {
 
 export const integrations: IntegrationProvider = create();
 export * from './types';
-export { APPS, APP_BY_ID, CATEGORIES, POPULAR, KIND_LABEL } from './catalog';
+export { APPS, APP_BY_ID, CATEGORIES, POPULAR, KIND_LABEL, connectedApps } from './catalog';

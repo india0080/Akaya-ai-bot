@@ -1,11 +1,7 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
-import { DeviceHostContext } from './components/deviceHost';
+import { DeviceHostContext, useThemeSync, StatusBar, useShowStatusBar, ToastProvider } from '@akaya/ui';
 import { useApp } from './state/store';
-import { useThemeSync } from './theme/useThemeSync';
-import { StatusBar } from './components/StatusBar';
-import { useShowStatusBar } from './components/useShowStatusBar';
-import { ToastProvider } from './components/Toast';
 import { SignUp } from './screens/SignUp';
 import { Login } from './screens/auth/Login';
 import { VerifyEmail } from './screens/auth/VerifyEmail';
@@ -29,6 +25,10 @@ import { VoiceNotes } from './screens/vnotes/VoiceNotes';
 import { Recorder } from './screens/vnotes/Recorder';
 import { NoteView } from './screens/vnotes/NoteView';
 import { FutureScheduler } from './future/FutureScheduler';
+import { Travel } from './screens/Travel';
+import { Shopping } from './screens/Shopping';
+import { Earnings } from './screens/Earnings';
+import { ReminderProvider, RemindersScreen } from './features/reminders';
 
 function Guard({ children }: { children: ReactNode }) {
   const { state } = useApp();
@@ -66,141 +66,175 @@ export function App() {
           <ToastProvider>
             {showStatus ? <StatusBar /> : <div className="safe-top" />}
             {state.auth.signedIn && <FutureScheduler />}
-            <Routes>
-              <Route path="/" element={<Navigate to={start} replace />} />
-              <Route path="/signup" element={state.auth.signedIn ? <Navigate to={start} replace /> : <SignUp />} />
-              <Route path="/login" element={state.auth.signedIn ? <Navigate to={start} replace /> : <Login />} />
-              <Route path="/forgot" element={<ForgotPassword />} />
-              <Route
-                path="/verify-email"
-                element={state.auth.signedIn ? <Navigate to={start} replace /> : <VerifyEmail />}
-              />
-              <Route
-                path="/onboarding"
-                element={!state.auth.signedIn ? <Navigate to="/signup" replace /> : <Onboarding />}
-              />
-              <Route
-                path="/home"
-                element={
-                  <Guard>
-                    <Home />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/chat/:id?"
-                element={
-                  <Guard>
-                    <Chat />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/voice"
-                element={
-                  <Guard>
-                    <Voice />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/more"
-                element={
-                  <Guard>
-                    <More />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/translate"
-                element={
-                  <Guard>
-                    <Translate />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/future"
-                element={
-                  <Guard>
-                    <FutureMessages />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/notes"
-                element={
-                  <Guard>
-                    <Notes />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/search"
-                element={
-                  <Guard>
-                    <Search />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/history"
-                element={
-                  <Guard>
-                    <History />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/upgrade"
-                element={
-                  <Guard>
-                    <Upgrade />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/vnotes"
-                element={
-                  <Guard>
-                    <VoiceNotes />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/vnotes/rec"
-                element={
-                  <Guard>
-                    <Recorder />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/vnotes/:id"
-                element={
-                  <Guard>
-                    <NoteView />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/apps"
-                element={
-                  <Guard>
-                    <Apps />
-                  </Guard>
-                }
-              />
-              <Route
-                path="/support"
-                element={
-                  <Guard>
-                    <Support />
-                  </Guard>
-                }
-              />
-              <Route path="*" element={<Navigate to={start} replace />} />
-            </Routes>
+            <ReminderProvider>
+              <Routes>
+                <Route path="/" element={<Navigate to={start} replace />} />
+                <Route path="/signup" element={state.auth.signedIn ? <Navigate to={start} replace /> : <SignUp />} />
+                <Route path="/login" element={state.auth.signedIn ? <Navigate to={start} replace /> : <Login />} />
+                <Route path="/forgot" element={<ForgotPassword />} />
+                <Route
+                  path="/verify-email"
+                  element={state.auth.signedIn ? <Navigate to={start} replace /> : <VerifyEmail />}
+                />
+                <Route
+                  path="/onboarding"
+                  element={!state.auth.signedIn ? <Navigate to="/signup" replace /> : <Onboarding />}
+                />
+                <Route
+                  path="/home"
+                  element={
+                    <Guard>
+                      <Home />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/chat/:id?"
+                  element={
+                    <Guard>
+                      <Chat />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/voice"
+                  element={
+                    <Guard>
+                      <Voice />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/more"
+                  element={
+                    <Guard>
+                      <More />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/translate"
+                  element={
+                    <Guard>
+                      <Translate />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/future"
+                  element={
+                    <Guard>
+                      <FutureMessages />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/notes"
+                  element={
+                    <Guard>
+                      <Notes />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/search"
+                  element={
+                    <Guard>
+                      <Search />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <Guard>
+                      <History />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/upgrade"
+                  element={
+                    <Guard>
+                      <Upgrade />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/vnotes"
+                  element={
+                    <Guard>
+                      <VoiceNotes />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/vnotes/rec"
+                  element={
+                    <Guard>
+                      <Recorder />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/vnotes/:id"
+                  element={
+                    <Guard>
+                      <NoteView />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/apps"
+                  element={
+                    <Guard>
+                      <Apps />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/support"
+                  element={
+                    <Guard>
+                      <Support />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/travel"
+                  element={
+                    <Guard>
+                      <Travel />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/shopping"
+                  element={
+                    <Guard>
+                      <Shopping />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/earnings"
+                  element={
+                    <Guard>
+                      <Earnings />
+                    </Guard>
+                  }
+                />
+                <Route
+                  path="/reminders"
+                  element={
+                    <Guard>
+                      <RemindersScreen />
+                    </Guard>
+                  }
+                />
+                <Route path="*" element={<Navigate to={start} replace />} />
+              </Routes>
+            </ReminderProvider>
           </ToastProvider>
         </DeviceHostContext.Provider>
       </div>

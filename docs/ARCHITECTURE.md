@@ -35,8 +35,20 @@ flowchart LR
 ## Shared design language
 
 Pearl orb, brand colours `#0269f8 #7625ef #0dabf4 #08da73`, orange `#E8743B`, Comfortaa (headings) and Manrope (body), and
-light/dark themes. The tokens live in `app/src/theme/tokens.css`; the agents carry copies (`frontend/src/theme`) so they stay
-self-contained.
+light/dark themes. Tokens and components live once in `packages/ui` (`@akaya/ui`), used by the app and both agent UIs.
+
+## Shared packages (single source of truth)
+
+| Package | Used by | What |
+|---|---|---|
+| `@akaya/ui` | app, agent UIs | Design system (source-only) |
+| `@akaya/affiliate` | app, agents, `services/link-redirect` | Platform registry, deep links, affiliate IDs, UTM, disclosure ([AFFILIATE.md](AFFILIATE.md)) |
+| `@akaya/reminders` | app | Reminder logic and the Hindi/Hinglish/English parser |
+| `@akaya/tz` | app, reminders, `services/future-message` | Time-zone maths |
+| `@akaya/server-kit` | agent back-ends, services | Store, cache, queue, notifications, SSE |
+| `@akaya/config` | every workspace | ESLint + TypeScript configs |
+
+`npm run dupcheck` (jscpd) keeps copy/paste in check: 12.3% duplicated lines in v0.4.1, under 1% in v0.5.0.
 
 ## Integration path (in order of effort)
 

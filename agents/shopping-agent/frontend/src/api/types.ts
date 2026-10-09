@@ -1,5 +1,6 @@
 /** Mirrors backend zod schemas (see backend/src/types.ts and docs/API.md). */
-export type StoreId = 'amazon' | 'flipkart' | 'myntra' | 'meesho' | 'croma' | 'ajio' | 'reliance' | 'tatacliq' | 'nykaa' | 'other';
+export type StoreId =
+  'amazon' | 'flipkart' | 'myntra' | 'meesho' | 'croma' | 'ajio' | 'reliance-digital' | 'tatacliq' | 'nykaa' | 'other';
 export type Preset = 'balanced' | 'cheapest' | 'fastest' | 'quality';
 export type SortBy = 'relevance' | 'price_asc' | 'price_desc' | 'rating' | 'delivery' | 'discount';
 export type Badge = 'best_price' | 'best_rated' | 'best_value' | 'fastest';

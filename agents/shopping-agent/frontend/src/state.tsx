@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { api } from './api/client';
 import type { AppNotification, Preset } from './api/types';
-import type { ThemePref } from './theme/useThemeSync';
+import type { ThemePref } from '@akaya/ui';
 
 interface Persisted {
   theme: ThemePref;

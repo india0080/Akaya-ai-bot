@@ -30,7 +30,7 @@ export function storeFromSource(source = ''): StoreId {
   if (s.includes('meesho')) return 'meesho';
   if (s.includes('croma')) return 'croma';
   if (s.includes('ajio')) return 'ajio';
-  if (s.includes('reliance')) return 'reliance';
+  if (s.includes('reliance')) return 'reliance-digital';
   if (s.includes('tata')) return 'tatacliq';
   if (s.includes('nykaa')) return 'nykaa';
   return 'other';
@@ -40,7 +40,17 @@ export class SerpApiProvider implements ShoppingProvider {
   id = 'serpapi';
   label = 'Google Shopping (SerpApi)';
   kind = 'api' as const;
-  stores: StoreId[] = ['amazon', 'flipkart', 'myntra', 'croma', 'reliance', 'tatacliq', 'ajio', 'nykaa', 'other'];
+  stores: StoreId[] = [
+    'amazon',
+    'flipkart',
+    'myntra',
+    'croma',
+    'reliance-digital',
+    'tatacliq',
+    'ajio',
+    'nykaa',
+    'other',
+  ];
   setupHint = 'Set SERPAPI_KEY (serpapi.com → API key).';
   constructor(private cfg: Config) {}
 
@@ -51,11 +61,21 @@ export class SerpApiProvider implements ShoppingProvider {
   async search(query: string, opts: SearchOptions = {}): Promise<Offer[]> {
     if (!this.configured()) throw new ProviderNotConfiguredError(this.id, this.setupHint);
     opts.onProgress?.({ provider: this.id, store: 'google-shopping', status: 'searching' });
-    const params = new URLSearchParams({ engine: 'google_shopping', q: query, gl: 'in', hl: 'en', location: 'India', api_key: this.cfg.SERPAPI_KEY! });
+    const params = new URLSearchParams({
+      engine: 'google_shopping',
+      q: query,
+      gl: 'in',
+      hl: 'en',
+      location: 'India',
+      api_key: this.cfg.SERPAPI_KEY!,
+    });
     const res = await fetch(`https://serpapi.com/search.json?${params}`, { signal: opts.signal });
     if (!res.ok) throw new Error(`SerpApi ${res.status}`);
     const json = (await res.json()) as { shopping_results?: SerpItem[] };
-    const offers = (json.shopping_results ?? []).slice(0, opts.limit ?? 30).map((x, i) => this.toOffer(x, i)).filter((o): o is Offer => !!o);
+    const offers = (json.shopping_results ?? [])
+      .slice(0, opts.limit ?? 30)
+      .map((x, i) => this.toOffer(x, i))
+      .filter((o): o is Offer => !!o);
     opts.onProgress?.({ provider: this.id, store: 'google-shopping', status: 'done', count: offers.length });
     return offers;
   }

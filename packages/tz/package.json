@@ -1,0 +1,25 @@
+{
+  "name": "@akaya/tz",
+  "version": "0.5.0",
+  "private": true,
+  "description": "Time-zone math for scheduling (Intl only, zero dependencies): wall-clock ↔ epoch, DST-safe repeats, IST-friendly formatting.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@akaya/config": "*",
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3"
+  }
+}

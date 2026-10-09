@@ -1,8 +1,5 @@
 import { useState } from 'react';
-import { Screen } from '../components/Screen';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Icon } from '../components/Icon';
-import { useToast } from '../components/Toast';
+import { Screen, ScreenHeader, Icon, useToast } from '@akaya/ui';
 import './Features.css';
 
 const FAQ = [

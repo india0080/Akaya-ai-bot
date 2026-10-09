@@ -97,7 +97,7 @@ Affiliate income: grocery quick-commerce affiliate programmes are limited and ch
 
 - In-app: SSE `GET /api/notifications/stream` (works now).
 - Web Push: generate VAPID keys (`npx web-push generate-vapid-keys`), set `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`, add the
-  `web-push` package in `services/notifications.ts` (stub marked TODO).
+  `web-push` package in `packages/server-kit/src/notifications.ts` (stub marked TODO).
 - FCM (Android/iOS app): `FCM_PROJECT_ID` + service-account JSON, send via FCM HTTP v1 (stub marked TODO).
 
 ## Production checklist

@@ -10,7 +10,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { runBackHandler } from './backStack';
+import { runBackHandler } from '@akaya/ui';
 
 export const isNativeApp = () => Capacitor.isNativePlatform();
 

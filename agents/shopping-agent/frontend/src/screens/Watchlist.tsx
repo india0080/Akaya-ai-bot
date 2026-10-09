@@ -6,9 +6,7 @@ import { SampleTag, StoreMark } from '../components/bits';
 import { Sparkline } from '../components/PriceChart';
 import { WatchSheet } from '../components/WatchSheet';
 import { inr } from '../lib/format';
-import { Icon } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
-import { useToast } from '../ui/Toast';
+import { Icon, Screen, useToast } from '@akaya/ui';
 
 export function Watchlist() {
   const nav = useNavigate();
@@ -48,7 +46,9 @@ export function Watchlist() {
             <Icon name="heart" size={26} />
           </span>
           <h3>Nothing watched yet</h3>
-          <p className="muted">Open any product and tap "Set a price alert". Akaya checks prices and pings you when they drop.</p>
+          <p className="muted">
+            Open any product and tap "Set a price alert". Akaya checks prices and pings you when they drop.
+          </p>
           <button className="btn btn-brand" onClick={() => nav('/home')}>
             Find something
           </button>
@@ -75,7 +75,9 @@ export function Watchlist() {
                 <div>
                   <small>Now</small>
                   <b>{inr(w.currentPrice)}</b>
-                  {change !== 0 && <em className={change > 0 ? 'down' : 'up'}>{change > 0 ? `▼ ${change}%` : `▲ ${-change}%`}</em>}
+                  {change !== 0 && (
+                    <em className={change > 0 ? 'down' : 'up'}>{change > 0 ? `▼ ${change}%` : `▲ ${-change}%`}</em>
+                  )}
                 </div>
                 <div>
                   <small>Target</small>
@@ -89,7 +91,11 @@ export function Watchlist() {
               {w.targetPrice && (
                 <div className="w-progress">
                   <div className="bar">
-                    <i style={{ width: `${hit ? 100 : Math.max(6, Math.round((1 - toGo / Math.max(1, w.priceAtAdd - w.targetPrice)) * 100))}%` }} />
+                    <i
+                      style={{
+                        width: `${hit ? 100 : Math.max(6, Math.round((1 - toGo / Math.max(1, w.priceAtAdd - w.targetPrice)) * 100))}%`,
+                      }}
+                    />
                   </div>
                   <small>{hit ? 'Target reached: go grab it' : `${inr(toGo)} to go`}</small>
                 </div>
@@ -120,7 +126,11 @@ export function Watchlist() {
           );
         })}
       </div>
-      {items && items.length > 0 && <p className="fine center">Checked automatically every 30 s in the demo (configurable). You always buy on the store.</p>}
+      {items && items.length > 0 && (
+        <p className="fine center">
+          Checked automatically every 30 s in the demo (configurable). You always buy on the store.
+        </p>
+      )}
       <WatchSheet
         open={!!edit}
         onClose={() => setEdit(null)}

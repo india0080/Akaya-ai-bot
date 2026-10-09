@@ -4,8 +4,6 @@ import type { StoreFlow } from './base.js';
 export const blinkitFlow: StoreFlow = {
   store: 'blinkit',
   stateKey: 'BLINKIT_STORAGE_STATE',
-  home: 'https://blinkit.com',
-  searchUrl: (q) => `https://blinkit.com/s/?q=${encodeURIComponent(q)}`,
   selectors: {
     productCard: 'TODO',
     productName: 'TODO',

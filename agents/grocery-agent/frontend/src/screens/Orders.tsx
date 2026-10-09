@@ -5,8 +5,7 @@ import type { Checkout, Order } from '../api/types';
 import { StoreMark } from '../components/bits';
 import { ago, inr } from '../lib/format';
 import { useStore } from '../state';
-import { Icon, type IconName } from '../ui/Icon';
-import { Screen } from '../ui/Screen';
+import { Icon, type IconName, Screen } from '@akaya/ui';
 
 const NICON: Record<string, IconName> = { ready_to_pay: 'wallet', order: 'truck', list_ready: 'basket' };
 
@@ -19,7 +18,10 @@ export function Orders() {
   useEffect(() => {
     const load = () => {
       api.orders().then(setOrders, () => {});
-      api.checkouts().then((c) => setPending(c.filter((x) => x.status === 'ready_to_pay' || x.status === 'filling')), () => {});
+      api.checkouts().then(
+        (c) => setPending(c.filter((x) => x.status === 'ready_to_pay' || x.status === 'filling')),
+        () => {},
+      );
       setNow(Date.now());
     };
     load();
@@ -52,7 +54,11 @@ export function Orders() {
                 <Icon name={c.status === 'filling' ? 'cart' : 'wallet'} size={18} />
               </span>
               <span className="grow">
-                <b>{c.status === 'filling' ? 'Filling cart…' : `Confirm & pay ${inr(c.carts.filter((x) => x.status !== 'cancelled').reduce((a, x) => a + (x.verifiedTotal ?? x.total), 0))}`}</b>
+                <b>
+                  {c.status === 'filling'
+                    ? 'Filling cart…'
+                    : `Confirm & pay ${inr(c.carts.filter((x) => x.status !== 'cancelled').reduce((a, x) => a + (x.verifiedTotal ?? x.total), 0))}`}
+                </b>
                 <small>
                   {c.carts.map((x) => x.storeName).join(' + ')} · {ago(c.createdAt, now)}
                 </small>
@@ -87,10 +93,18 @@ export function Orders() {
         <small className="muted">in-app · live</small>
       </div>
       <div className="list card notif-list">
-        {notifications.length === 0 && <p className="empty-line">Cart-ready, delivery and weekly-list alerts show up here.</p>}
+        {notifications.length === 0 && (
+          <p className="empty-line">Cart-ready, delivery and weekly-list alerts show up here.</p>
+        )}
         {notifications.slice(0, 8).map((n) => (
-          <button key={n.id} className={`list-row notif${n.read ? '' : ' unread'}`} onClick={() => (api.markRead(n.id).then(refreshNotifications), open(n.link))}>
-            <span className={`gi ${n.kind === 'ready_to_pay' ? 'gi-orange' : n.kind === 'order' ? 'gi-cyan' : 'gi-violet'}`}>
+          <button
+            key={n.id}
+            className={`list-row notif${n.read ? '' : ' unread'}`}
+            onClick={() => (api.markRead(n.id).then(refreshNotifications), open(n.link))}
+          >
+            <span
+              className={`gi ${n.kind === 'ready_to_pay' ? 'gi-orange' : n.kind === 'order' ? 'gi-cyan' : 'gi-violet'}`}
+            >
               <Icon name={NICON[n.kind] ?? 'bell'} size={16} />
             </span>
             <span className="grow">
@@ -115,7 +129,8 @@ function OrderRow({ o, onClick }: { o: Order; onClick: () => void }) {
         </b>
         <small>
           {o.stageLabel}
-          {o.stage !== 'delivered' && ` · ${o.minutesLeft > 0 ? `about ${o.minutesLeft} min` : 'any moment'}`} · {o.items.length} items
+          {o.stage !== 'delivered' && ` · ${o.minutesLeft > 0 ? `about ${o.minutesLeft} min` : 'any moment'}`} ·{' '}
+          {o.items.length} items
         </small>
         <span className="mini-progress">
           <i style={{ width: `${Math.max(6, o.progress * 100)}%` }} />

@@ -8,7 +8,8 @@ import { uid } from '../lib/time';
 import { auth } from '../auth';
 import type { Connection } from '../integrations/types';
 import type { VoiceNote } from '../notes/types';
-import type { Activity, AppState, Attachment, Chat, ChatMode, FutureMessage, Note, Settings, TodayItem } from './types';
+import { migrateReminders, reminderActions } from '../features/reminders/state';
+import type { Activity, AppState, Chat, ChatMessage, FutureMessage, Note, Settings, TodayItem } from './types';
 
 export const STORAGE_KEY = 'akaya:v1';
 
@@ -19,7 +20,9 @@ function load(): AppState {
       const parsed = JSON.parse(raw) as AppState;
       if (parsed.version === 1) {
         const base = initialState();
-        return { ...base, ...parsed, settings: { ...base.settings, ...parsed.settings } };
+        const settings = { ...base.settings, ...parsed.settings };
+        // v0.4 data has no `reminders`: seed the samples, then move old Today reminders over
+        return migrateReminders({ ...base, ...parsed, settings }, settings.reminderLead);
       }
     }
   } catch {
@@ -54,6 +57,8 @@ function useAppStore() {
         patch((s) => ({ ...s, today: s.today.map((t) => (t.id === id ? { ...t, done: !t.done } : t)) })),
       addToday: (item: Omit<TodayItem, 'id' | 'done'>) =>
         patch((s) => ({ ...s, today: [...s.today, { ...item, id: uid(), done: false, createdAt: Date.now() }] })),
+
+      ...reminderActions(patch),
 
       addNote: (text: string, color: Note['color']) =>
         patch((s) => ({ ...s, notes: [{ id: uid(), text, color, createdAt: Date.now() }, ...s.notes] })),
@@ -101,7 +106,7 @@ function useAppStore() {
         chatId: string,
         from: 'me' | 'akaya',
         text: string,
-        extra?: { attachments?: Attachment[]; modes?: ChatMode[] },
+        extra?: Pick<ChatMessage, 'attachments' | 'modes' | 'action' | 'reminderId'>,
       ) =>
         patch((s) => ({
           ...s,

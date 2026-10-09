@@ -7,13 +7,9 @@ import { CompareSheet } from '../components/CompareSheet';
 import { FilterSheet } from '../components/FilterSheet';
 import { ProductCard } from '../components/ProductCard';
 import { SampleTag, StoreMark } from '../components/bits';
-import { inr, STORE_NAMES } from '../lib/format';
+import { inr, storeMeta } from '../lib/format';
 import { useStore } from '../state';
-import { Segmented } from '../ui/Controls';
-import { Icon } from '../ui/Icon';
-import { Pearl } from '../ui/Pearl';
-import { Screen } from '../ui/Screen';
-import { ScreenHeader } from '../ui/ScreenHeader';
+import { Segmented, Icon, Pearl, Screen, ScreenHeader } from '@akaya/ui';
 
 const SORTS: { v: SortBy; l: string }[] = [
   { v: 'relevance', l: 'Akaya rank' },
@@ -41,7 +37,10 @@ function ResultsInner({ raw, initialPreset }: { raw: string; initialPreset?: Pre
   const [filterOpen, setFilterOpen] = useState(false);
   const [cmpOpen, setCmpOpen] = useState(false);
 
-  const req = useMemo(() => ({ query: filters ? filters.q : raw, filters: filters?.f, sort, preset }), [raw, filters, sort, preset]);
+  const req = useMemo(
+    () => ({ query: filters ? filters.q : raw, filters: filters?.f, sort, preset }),
+    [raw, filters, sort, preset],
+  );
   const s = useSearch(raw ? req : null);
   const r = s.result;
   const status = storeStatus(s.progress);
@@ -50,8 +49,9 @@ function ResultsInner({ raw, initialPreset }: { raw: string; initialPreset?: Pre
   if (effFilters.maxPrice) chips.push(`≤ ${inr(effFilters.maxPrice)}`);
   if (effFilters.minPrice) chips.push(`≥ ${inr(effFilters.minPrice)}`);
   if (effFilters.minRating) chips.push(`${effFilters.minRating}★+`);
-  if (effFilters.maxDeliveryDays) chips.push(effFilters.maxDeliveryDays <= 1 ? 'Delivery tomorrow' : `Delivery ≤ ${effFilters.maxDeliveryDays} days`);
-  if (effFilters.stores?.length) chips.push(effFilters.stores.map((x) => STORE_NAMES[x] ?? x).join(' / '));
+  if (effFilters.maxDeliveryDays)
+    chips.push(effFilters.maxDeliveryDays <= 1 ? 'Delivery tomorrow' : `Delivery ≤ ${effFilters.maxDeliveryDays} days`);
+  if (effFilters.stores?.length) chips.push(effFilters.stores.map((x) => storeMeta(x).name).join(' / '));
   if (effFilters.hideHighFakeRisk) chips.push('No fake-review risk');
   if (effFilters.inStockOnly) chips.push('In stock');
   const ceiling = r ? Math.max(...r.products.map((p) => p.priceRange[1]), effFilters.maxPrice ?? 0, 1000) : 5000;
@@ -83,9 +83,14 @@ function ResultsInner({ raw, initialPreset }: { raw: string; initialPreset?: Pre
           <h3>Comparing stores for you…</h3>
           <div className="store-progress card">
             {[...status.values()].map((p) => (
-              <motion.div key={p.store} className="sp-row" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+              <motion.div
+                key={p.store}
+                className="sp-row"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+              >
                 <StoreMark store={p.store} size={22} />
-                <b>{STORE_NAMES[p.store] ?? p.store}</b>
+                <b>{storeMeta(p.store).name}</b>
                 <span className={`sp-st ${p.status}`}>
                   {p.status === 'searching' ? (
                     <>
@@ -142,14 +147,26 @@ function ResultsInner({ raw, initialPreset }: { raw: string; initialPreset?: Pre
           <div className="sorts" role="tablist" aria-label="Sort">
             <Icon name="sort" size={15} />
             {SORTS.map((x) => (
-              <button key={x.v} role="tab" aria-selected={sort === x.v} className={`chip${sort === x.v ? ' on' : ''}`} onClick={() => setSort(x.v)}>
+              <button
+                key={x.v}
+                role="tab"
+                aria-selected={sort === x.v}
+                className={`chip${sort === x.v ? ' on' : ''}`}
+                onClick={() => setSort(x.v)}
+              >
                 {x.l}
               </button>
             ))}
           </div>
           <div className="plist">
             {r.products.map((p, i) => (
-              <ProductCard key={p.key} p={p} i={i} compared={compare.includes(p.key)} onCompare={() => toggleCompare(p.key)} />
+              <ProductCard
+                key={p.key}
+                p={p}
+                i={i}
+                compared={compare.includes(p.key)}
+                onCompare={() => toggleCompare(p.key)}
+              />
             ))}
             {r.products.length === 0 && (
               <div className="empty card">
@@ -161,14 +178,20 @@ function ResultsInner({ raw, initialPreset }: { raw: string; initialPreset?: Pre
             )}
           </div>
           <p className="fine center">
-            Sources: {r.providers.map((p) => `${p.label}${p.kind === 'mock' ? ' (sample data)' : ''}`).join(', ')} · {r.tookMs} ms
+            Sources: {r.providers.map((p) => `${p.label}${p.kind === 'mock' ? ' (sample data)' : ''}`).join(', ')} ·{' '}
+            {r.tookMs} ms
           </p>
         </>
       )}
 
       <AnimatePresence>
         {compare.length > 0 && (
-          <motion.div className="cmp-bar" initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}>
+          <motion.div
+            className="cmp-bar"
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+          >
             <button className="icon-btn" onClick={clearCompare} aria-label="Clear compare">
               <Icon name="close" size={16} />
             </button>

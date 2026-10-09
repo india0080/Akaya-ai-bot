@@ -17,7 +17,7 @@ const Env = z.object({
   PORT: z.coerce.number().default(8788),
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('*'),
-  /** comma list: mock, instamart, blinkit, zepto, bigbasket, amazonfresh */
+  /** comma list: mock, instamart, blinkit, zepto, bigbasket, amazon-fresh */
   PROVIDERS: z.string().default('mock'),
   DATA_FILE: z.string().default('data/db.json'),
   CACHE_TTL_SECONDS: z.coerce.number().default(300),
@@ -31,7 +31,11 @@ const Env = z.object({
   /** a filled cart's prices are held for this long before we ask the user to re-check */
   PAYMENT_WINDOW_MINUTES: z.coerce.number().default(15),
   /** schedule runner tick (weekly lists) */
-  SEED_SAMPLE_LISTS: z.enum(['true', 'false']).default('true').transform((v) => v === 'true').describe('create sample saved lists for the demo user on first run'),
+  SEED_SAMPLE_LISTS: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true')
+    .describe('create sample saved lists for the demo user on first run'),
   SCHEDULE_TICK_MS: z.coerce.number().default(60000),
   /** mock order-tracking speed multiplier (1 = real time) */
   ORDER_SIM_SPEED: z.coerce.number().default(20),

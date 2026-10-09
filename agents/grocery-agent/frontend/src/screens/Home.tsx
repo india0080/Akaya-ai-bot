@@ -6,10 +6,7 @@ import { SampleTag, StoreMark } from '../components/bits';
 import { EXAMPLES } from '../lib/examples';
 import { DAYS, hhmm12, inr, istWhen } from '../lib/format';
 import { useStore } from '../state';
-import { Icon, type IconName } from '../ui/Icon';
-import { Pearl } from '../ui/Pearl';
-import { Screen } from '../ui/Screen';
-import { useToast } from '../ui/Toast';
+import { Icon, type IconName, Pearl, Screen, useToast } from '@akaya/ui';
 
 const STEPS: { i: IconName; t: string; s: string; c: string }[] = [
   { i: 'list', t: 'Your list', s: 'Type or speak, any language', c: 'gi-violet' },
@@ -33,9 +30,24 @@ export function Home({ onVoice }: { onVoice: () => void }) {
   useEffect(() => {
     api.lists().then(setLists, () => {});
     api.settings().then(setSettings, () => {});
-    api.checkouts().then((c) => setPending(c.find((x) => x.status === 'ready_to_pay' && x.carts.some((k) => ['ready', 'partial', 'handed_off'].includes(k.status))) ?? null), () => {});
-    api.orders().then((o) => setActive(o.find((x) => x.stage !== 'delivered') ?? null), () => {});
-    api.providers().then((p) => setMockOnly(p.stores.every((s) => s.active.kind === 'mock')), () => {});
+    api.checkouts().then(
+      (c) =>
+        setPending(
+          c.find(
+            (x) =>
+              x.status === 'ready_to_pay' && x.carts.some((k) => ['ready', 'partial', 'handed_off'].includes(k.status)),
+          ) ?? null,
+        ),
+      () => {},
+    );
+    api.orders().then(
+      (o) => setActive(o.find((x) => x.stage !== 'delivered') ?? null),
+      () => {},
+    );
+    api.providers().then(
+      (p) => setMockOnly(p.stores.every((s) => s.active.kind === 'mock')),
+      () => {},
+    );
   }, []);
 
   const go = async (t: string) => {
@@ -60,7 +72,9 @@ export function Home({ onVoice }: { onVoice: () => void }) {
     void go(text);
   };
   const unread = notifications.filter((n) => !n.read).length;
-  const scheduled = lists.filter((l) => l.schedule?.enabled && l.nextRunAt).sort((a, b) => a.nextRunAt! - b.nextRunAt!)[0];
+  const scheduled = lists
+    .filter((l) => l.schedule?.enabled && l.nextRunAt)
+    .sort((a, b) => a.nextRunAt! - b.nextRunAt!)[0];
 
   return (
     <Screen nav className="home">
@@ -72,11 +86,16 @@ export function Home({ onVoice }: { onVoice: () => void }) {
               <span className="grad-text">Grocery</span> Agent
             </h1>
             <small className="addr">
-              <Icon name="location" size={12} /> {settings ? `${settings.address} · ${settings.pincode}` : 'Akaya · fills the cart, you pay'}
+              <Icon name="location" size={12} />{' '}
+              {settings ? `${settings.address} · ${settings.pincode}` : 'Akaya · fills the cart, you pay'}
             </small>
           </div>
         </div>
-        <button className="icon-btn card" onClick={() => nav('/orders')} aria-label={`Orders and alerts${unread ? `, ${unread} unread` : ''}`}>
+        <button
+          className="icon-btn card"
+          onClick={() => nav('/orders')}
+          aria-label={`Orders and alerts${unread ? `, ${unread} unread` : ''}`}
+        >
           <Icon name="bell" size={20} />
           {unread > 0 && <i className="dot-badge">{unread}</i>}
         </button>
@@ -118,7 +137,8 @@ export function Home({ onVoice }: { onVoice: () => void }) {
         <div className="notice">
           <Icon name="box" size={16} />
           <span>
-            Stores run on the <b>Mock provider</b>: realistic <b>sample</b> prices, fees and ETAs, not live store data. Connect your own store session or a partner API to go live.
+            Stores run on the <b>Mock provider</b>: realistic <b>sample</b> prices, fees and ETAs, not live store data.
+            Connect your own store session or a partner API to go live.
           </span>
         </div>
       )}
@@ -129,7 +149,14 @@ export function Home({ onVoice }: { onVoice: () => void }) {
             <Icon name="wallet" size={18} />
           </span>
           <span className="grow">
-            <b>Ready to pay: {inr(pending.carts.filter((c) => c.status !== 'cancelled').reduce((a, c) => a + (c.verifiedTotal ?? c.total), 0))}</b>
+            <b>
+              Ready to pay:{' '}
+              {inr(
+                pending.carts
+                  .filter((c) => c.status !== 'cancelled')
+                  .reduce((a, c) => a + (c.verifiedTotal ?? c.total), 0),
+              )}
+            </b>
             <small>{pending.carts.map((c) => c.storeName).join(' + ')} cart filled. Confirm and pay in the app.</small>
           </span>
           <Icon name="chev" size={16} />
@@ -162,7 +189,9 @@ export function Home({ onVoice }: { onVoice: () => void }) {
           <button key={l.id} className="mini-list card" onClick={() => void go(l.text)}>
             <span className="em">{l.emoji}</span>
             <b>{l.name}</b>
-            <small>{l.text.split(',').length} items{l.budget ? ` · ≤ ${inr(l.budget)}` : ''}</small>
+            <small>
+              {l.text.split(',').length} items{l.budget ? ` · ≤ ${inr(l.budget)}` : ''}
+            </small>
           </button>
         ))}
         <button className="mini-list card add" onClick={() => nav('/lists?new=1')}>
@@ -181,10 +210,14 @@ export function Home({ onVoice }: { onVoice: () => void }) {
           </span>
           <span className="grow">
             <b>
-              {scheduled.emoji} {scheduled.name}: every {scheduled.schedule!.days.map((d) => DAYS[d]).join(', ')}, {hhmm12(scheduled.schedule!.time)} IST
+              {scheduled.emoji} {scheduled.name}: every {scheduled.schedule!.days.map((d) => DAYS[d]).join(', ')},{' '}
+              {hhmm12(scheduled.schedule!.time)} IST
             </b>
             <small>
-              Next: {istWhen(scheduled.nextRunAt!)} · {scheduled.schedule!.autoFill ? 'fills the cart, then asks you to pay' : 'compares and asks you to review'}
+              Next: {istWhen(scheduled.nextRunAt!)} ·{' '}
+              {scheduled.schedule!.autoFill
+                ? 'fills the cart, then asks you to pay'
+                : 'compares and asks you to review'}
             </small>
           </span>
           <Icon name="chev" size={16} />
@@ -209,7 +242,9 @@ export function Home({ onVoice }: { onVoice: () => void }) {
             </span>
           </div>
         ))}
-        <p className="fine">Payments always happen in the store app and need your OTP / UPI PIN. Akaya never auto-pays.</p>
+        <p className="fine">
+          Payments always happen in the store app and need your OTP / UPI PIN. Akaya never auto-pays.
+        </p>
       </div>
     </Screen>
   );

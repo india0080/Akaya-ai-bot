@@ -1,15 +1,12 @@
 import { useState } from 'react';
-import { Sheet } from '../../components/Sheet';
-import { Icon, type IconName } from '../../components/Icon';
-import { Segmented } from '../../components/Controls';
-import { useToast } from '../../components/Toast';
+import { useNavigate } from 'react-router-dom';
+import { Sheet, Icon, type IconName, Segmented, useToast } from '@akaya/ui';
 import { useApp } from '../../state/store';
 import { fmtTime } from '../../lib/time';
 import type { TodayItem } from '../../state/types';
 
 type F = 'all' | TodayItem['kind'];
 const META: Record<TodayItem['kind'], { icon: IconName; color: string; bg: string; label: string }> = {
-  reminder: { icon: 'alarm', color: 'var(--orange)', bg: 'var(--tint-orange)', label: 'Reminder' },
   calendar: { icon: 'cal', color: 'var(--blue)', bg: 'var(--tint-blue)', label: 'Event' },
   followup: { icon: 'follow', color: 'var(--green-text)', bg: 'var(--tint-green)', label: 'Follow-up' },
 };
@@ -17,6 +14,7 @@ const META: Record<TodayItem['kind'], { icon: IconName; color: string; bg: strin
 export function TodaySheet({ open, onClose, kind }: { open: boolean; onClose: () => void; kind: string | null }) {
   const { state, toggleToday, addToday } = useApp();
   const toast = useToast();
+  const nav = useNavigate();
   const [f, setF] = useState<F>('all');
   const [text, setText] = useState('');
   const [time, setTime] = useState('18:00');
@@ -33,7 +31,7 @@ export function TodaySheet({ open, onClose, kind }: { open: boolean; onClose: ()
     const [h, m] = time.split(':').map(Number);
     const d = new Date();
     d.setHours(h, m, 0, 0);
-    addToday({ kind: f === 'all' ? 'reminder' : f, title: text.trim(), time: d.getTime() });
+    addToday({ kind: f === 'all' ? 'calendar' : f, title: text.trim(), time: d.getTime() });
     setText('');
     toast(`Added · I'll nudge you ${state.settings.reminderLead} min before`, 'alarm');
   };
@@ -45,11 +43,20 @@ export function TodaySheet({ open, onClose, kind }: { open: boolean; onClose: ()
         onChange={setF}
         options={[
           { value: 'all', label: 'All' },
-          { value: 'reminder', label: 'Reminders' },
           { value: 'calendar', label: 'Calendar' },
           { value: 'followup', label: 'Follow-ups' },
         ]}
       />
+      <button className="td-row td-rem" onClick={() => nav('/reminders?day=today')}>
+        <span className="td-ic" style={{ background: 'var(--tint-orange)', color: 'var(--orange)' }}>
+          <Icon name="alarm" size={16} />
+        </span>
+        <span className="grow">
+          <b>Reminders</b>
+          <small>Open the reminders dashboard</small>
+        </span>
+        <Icon name="chev" size={15} />
+      </button>
       <div className="td-list">
         {items.map((t) => {
           const m = META[t.kind];
@@ -80,7 +87,7 @@ export function TodaySheet({ open, onClose, kind }: { open: boolean; onClose: ()
       <div className="td-add">
         <input
           className="input"
-          placeholder={`Add ${f === 'all' ? 'a reminder' : META[f].label.toLowerCase()}…`}
+          placeholder={`Add ${f === 'all' ? 'an event' : META[f].label.toLowerCase()}…`}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}

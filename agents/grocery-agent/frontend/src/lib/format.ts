@@ -1,3 +1,4 @@
+import { getPlatform } from '@akaya/affiliate';
 import type { StoreId, Strategy, Unit } from '../api/types';
 
 export const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
@@ -18,8 +19,10 @@ export function stepFor(key: string, qty: number, unit: Unit) {
 }
 
 const IST = 'Asia/Kolkata';
-export const istTime = (t: number | string) => new Date(t).toLocaleTimeString('en-IN', { timeZone: IST, hour: 'numeric', minute: '2-digit' }).toUpperCase();
-export const istDay = (t: number | string) => new Date(t).toLocaleDateString('en-IN', { timeZone: IST, weekday: 'short', day: 'numeric', month: 'short' });
+export const istTime = (t: number | string) =>
+  new Date(t).toLocaleTimeString('en-IN', { timeZone: IST, hour: 'numeric', minute: '2-digit' }).toUpperCase();
+export const istDay = (t: number | string) =>
+  new Date(t).toLocaleDateString('en-IN', { timeZone: IST, weekday: 'short', day: 'numeric', month: 'short' });
 export const istWhen = (t: number | string) => `${istDay(t)}, ${istTime(t)} IST`;
 export function ago(t: number, now: number) {
   const m = Math.round((now - t) / 60_000);
@@ -41,11 +44,22 @@ export const STRATEGY: Record<Strategy, { label: string; short: string }> = {
   split: { label: 'Split stores', short: 'Split' },
 };
 
-export const STORES: Record<StoreId, { name: string; short: string; color: string; ink: string; mono: string; mode: 'quick' | 'slot' }> = {
-  instamart: { name: 'Swiggy Instamart', short: 'Instamart', color: '#fc8019', ink: '#fff', mono: 'IM', mode: 'quick' },
-  blinkit: { name: 'Blinkit', short: 'Blinkit', color: '#f8cb46', ink: '#1c1c1c', mono: 'b', mode: 'quick' },
-  zepto: { name: 'Zepto', short: 'Zepto', color: '#5b1fa3', ink: '#fff', mono: 'Z', mode: 'quick' },
-  bigbasket: { name: 'BigBasket', short: 'BigBasket', color: '#84c225', ink: '#fff', mono: 'bb', mode: 'slot' },
-  amazonfresh: { name: 'Amazon Fresh', short: 'Amazon Fresh', color: '#3a9e3a', ink: '#fff', mono: 'af', mode: 'slot' },
-};
-export const STORE_IDS = Object.keys(STORES) as StoreId[];
+/** store display data from the shared platform registry */
+const STORE_ID_LIST: StoreId[] = ['instamart', 'blinkit', 'zepto', 'bigbasket', 'amazon-fresh'];
+export const STORES = Object.fromEntries(
+  STORE_ID_LIST.map((s) => {
+    const p = getPlatform(s)!;
+    return [
+      s,
+      {
+        name: p.name,
+        short: p.short ?? p.name,
+        color: p.color,
+        ink: p.ink ?? '#fff',
+        mono: p.mono,
+        mode: p.delivery ?? 'slot',
+      },
+    ];
+  }),
+) as Record<StoreId, { name: string; short: string; color: string; ink: string; mono: string; mode: 'quick' | 'slot' }>;
+export const STORE_IDS = STORE_ID_LIST;

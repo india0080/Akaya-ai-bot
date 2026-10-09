@@ -3,6 +3,7 @@
  * agent runs on the Mock provider with clearly labelled sample data.
  */
 import { config as dotenv } from 'dotenv';
+import { affiliateEnvFrom, type AffiliateEnv } from '@akaya/affiliate';
 import { z } from 'zod';
 
 // backend/.env wins over the agent-root .env
@@ -31,7 +32,8 @@ const Env = z.object({
   // Amazon Associates: Creators API (PA-API 5.0 was retired on 15 May 2026)
   AMAZON_CREDENTIAL_ID: z.string().optional(),
   AMAZON_CREDENTIAL_SECRET: z.string().optional(),
-  AMAZON_PARTNER_TAG: z.string().optional(),
+  /** Associates tag for amazon.in (also used as the Creators API partnerTag) */
+  AMAZON_TAG_IN: z.string().optional(),
   /** India = EU credential version 3.2 */
   AMAZON_TOKEN_URL: z.string().default('https://api.amazon.co.uk/auth/o2/token'),
   AMAZON_MARKETPLACE: z.string().default('www.amazon.in'),
@@ -52,5 +54,9 @@ const Env = z.object({
   REDIS_URL: z.string().optional(),
 });
 
-export type Config = z.infer<typeof Env>;
-export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => Env.parse(env);
+/** parsed env + every affiliate ID @akaya/affiliate knows about (AMAZON_TAG_*, FLIPKART_AFFILIATE_ID, CUELINKS_CID, …) */
+export type Config = z.infer<typeof Env> & { affiliate: AffiliateEnv };
+export const loadConfig = (env: NodeJS.ProcessEnv = process.env): Config => ({
+  ...Env.parse(env),
+  affiliate: affiliateEnvFrom(env),
+});

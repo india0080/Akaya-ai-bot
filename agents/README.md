@@ -1,7 +1,8 @@
 # Akaya Agents
 
-Two standalone agents for Akaya. Each folder is self-contained (backend + frontend + docs + tests + Docker) so a developer can
-pick one up without the other or the main app.
+Two agents for Akaya, each with its own backend, frontend, docs and tests. They are npm workspaces of the root repo and
+share code through `packages/` (`@akaya/ui`, `@akaya/affiliate` for store links, `@akaya/server-kit` for the store, cache,
+queue and SSE) and the Dockerfiles in `/docker`, instead of carrying their own copies.
 
 | Agent | Folder | UI | API (Swagger at `/docs`) | What it does |
 |---|---|---|---|---|
