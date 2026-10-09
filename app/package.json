@@ -1,7 +1,7 @@
 {
   "name": "akaya-app",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Akaya: your intelligent assistant (mobile-first PWA prototype)",
   "scripts": {

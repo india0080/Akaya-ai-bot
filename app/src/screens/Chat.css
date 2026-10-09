@@ -134,7 +134,7 @@
   }
 }
 .composer {
-  padding: 8px 12px calc(var(--nav-h) + 22px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   flex: none;
 }
 .comp-box {
@@ -206,7 +206,7 @@
 .att-menu {
   position: absolute;
   left: 12px;
-  bottom: calc(var(--nav-h) + 22px + env(safe-area-inset-bottom, 0px) + 60px);
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px) + 60px);
   z-index: 5;
   width: 250px;
   padding: 6px;

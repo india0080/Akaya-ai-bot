@@ -1,12 +1,20 @@
 # Akaya: mobile app prototype (React + TypeScript + Vite PWA)
 
 A clickable, installable prototype of the Akaya assistant app with **light and dark** themes.
-It covers Sign Up → 5-slide onboarding → Home (pearl + "Ask Akaya anything" chat pill), Chat (with a **+** attachment sheet), Voice, History, More/Settings and the
+It covers Sign Up → 5-slide onboarding → Home (pearl, "How can I help you today?", Ask bar, bento quick actions), Chat (with a **+** attachment sheet), Voice, History, More/Settings and the
 feature screens (Translate, Future Message, Smart Note, Search, Upgrade, Support), plus **Apps & Integrations**
 (264 apps with real brand logos, India/Global filter), **Future Message** (scheduled auto-send queue) and **Voice Notes** (live transcript → structured notes).
 
-**Navigation:** a floating tab bar `Home | Chat | (Voice orb) | History | More`. The glowing centre orb
-(animated waveform) opens Voice. More holds settings.
+**Navigation (v0.4.1, no bottom tab bar):** Home is the hub.
+
+| Screen | How to reach it | Back |
+|---|---|---|
+| Chat | Home → "Ask Akaya anything…" bar, *Ask Akaya* tile, recent chats (attachments via **+** in Chat) | ← in the Chat header, Android back → Home |
+| Voice | waveform button in the Home Ask bar | ← / Android back → Home |
+| Voice Notes | *Voice Notes* banner on Home, Voice header | ← |
+| History | clock icon in the Home header, History icon in the Chat header, *Recent chats → History* | ← / Android back → Home |
+| More & Settings | gear icon or avatar in the Home header (also the avatar on History) | ← / Android back → Home |
+| Future Message, Translate, Smart Note, Read Screen, Apps… | bento tiles, *Do more* slider, More | ← (previous screen) |
 
 All data is sample data, stored in the browser (`localStorage`). There is no backend. AI replies, phone OTP, Google sign-in and translation are mocked. **Email sign-up / log-in** uses Firebase Auth when configured, otherwise a clearly labelled local Demo mode (see below). An **Android APK** is built with Capacitor.
 
@@ -152,7 +160,7 @@ android/                Capacitor Android project (app ID one.akaya.app)
 capacitor.config.ts     Capacitor config
 src/
   main.tsx              entry: fonts, global CSS, providers, router
-  App.tsx               phone frame, status bar, routes, auth/onboarding guard, bottom nav
+  App.tsx               phone frame, status bar, routes, auth/onboarding guard
   theme/
     tokens.css          brand colours, gradients, light + dark token sets  ← edit colours here
     global.css          reset, phone frame, shared primitives (.card, .btn, .input, .list…)
@@ -177,7 +185,7 @@ src/
   notes/                Voice Notes: modes, recorder (mic + speech), IndexedDB audio store, notes providers, export
   screens/
     Apps.tsx (+ apps/AppSheet.tsx), vnotes/ (VoiceNotes, Recorder, NoteView, NotePanels, MindMap),
-    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home, Chat (+ chat/ AttachSheet, Attachments, useRecorder),
+    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodayRow, FeatureSlider, RecentChats), Chat (+ chat/ AttachSheet, Attachments, useRecorder),
     FutureMessages (+ future/ Composer, Preview), Voice, More, Translate, FutureMessages, Notes,
     Search, History (unified timeline), Upgrade, Support
     sheets/             bottom sheets: Notifications, Read Screen, Today, Agents, Explore, Loan
@@ -281,9 +289,11 @@ for listing pages. Replace any mark with the vendor's official asset if their gu
 
 ## Home and Chat attachments
 
-- **Home** shows the pearl, the On-device/Online toggle, a *Floating* chip and a long chat pill (**+**, "Ask Akaya anything…",
-  mic). Tapping the pill animates the pearl into the chat header and opens Chat with the keyboard up (`/chat?focus=1`);
-  **+** opens the attachment sheet (`/chat?attach=menu`). The Floating bubble toggle also lives in More → Settings.
+- **Home** keeps the v0.3 layout (header, On-device/Online, pearl, bento with the Floating tile, Voice Notes banner, Today,
+  Your apps, *Do more* slider, Recent chats). Directly below "How can I help you today?" sits a long Ask bar (keyboard
+  icon, divider, "Ask Akaya anything…", gradient waveform button). Tapping the bar animates the pearl into the Chat header
+  and opens Chat with the keyboard up (`/chat?focus=1`); the waveform button opens Voice. Attachments: **+** in Chat
+  (`/chat?attach=menu`).
 - **Chat +** sheet: Camera, Photos, Files (PDF/DOCX/XLSX/PPTX/TXT/CSV), Scan (document filter), Screenshot / Read screen,
   Voice note, Location, Contact, Apps, Smart Notes, Create image, Schedule, plus **Web search** and **Deep think** toggles.
   Attachments become removable chips with thumbnails; sent messages show previews, and the (demo) reply names each file.

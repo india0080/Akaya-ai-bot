@@ -173,8 +173,11 @@ export function Chat() {
   const msgs = chat?.messages ?? [];
   const canSend = !!text.trim() || atts.length > 0;
   return (
-    <main className="screen with-nav chat-screen">
+    <main className="screen chat-screen">
       <header className="chat-top">
+        <button className="icon-btn card" aria-label="Back to Home" onClick={() => nav('/home')}>
+          <Icon name="back" size={20} />
+        </button>
         <motion.span
           className="chat-pearl"
           initial={fromHome ? { scale: 1.25, opacity: 0.6 } : false}

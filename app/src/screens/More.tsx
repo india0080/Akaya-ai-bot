@@ -63,9 +63,12 @@ export function More() {
     .filter(Boolean);
 
   return (
-    <Screen nav className="more">
+    <Screen className="more">
       <header className="more-head">
-        <h2>More</h2>
+        <button className="icon-btn card" aria-label="Back to Home" onClick={() => nav('/home')}>
+          <Icon name="back" size={20} />
+        </button>
+        <h2>More &amp; Settings</h2>
       </header>
       <div className="card profile">
         <Avatar size={54} />

@@ -69,11 +69,6 @@
   font-weight: 700;
   max-width: 150px;
 }
-.h-ask {
-  text-align: center;
-  font-size: 1.32rem;
-  margin-top: 0;
-}
 
 /* ---------- bento (design E) ---------- */
 .bento {
@@ -482,13 +477,21 @@
   }
 }
 
-/* ---------- v0.4 minimal home ---------- */
-.home-min {
+/* ---------- v0.4.1: header actions + Ask bar (replaces the "How can I help you today?" heading) ---------- */
+.h-actions {
   display: flex;
-  flex-direction: column;
+  gap: 8px;
 }
-.home-min.leaving {
+.home.leaving {
   pointer-events: none;
+}
+.home.leaving > :not(.h-hero):not(.h-pill):not(.h-proxy) {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.home.leaving .h-mode {
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 .h-proxy {
   position: absolute;
@@ -500,140 +503,92 @@
   top: 40%;
   left: 0;
 }
-.h-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 14px;
-  position: relative;
-  z-index: 3;
-}
-.h-float {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 8px 0 11px;
-  border-radius: 99px;
-  font-size: 0.74rem;
-  font-weight: 750;
-  color: var(--text-2);
-  background: var(--surface);
-  border: 1px solid var(--line);
-}
-.h-float-sw {
-  position: relative;
-  width: 24px;
-  height: 14px;
-  border-radius: 99px;
-  background: var(--line-strong, rgba(127, 127, 160, 0.35));
-  transition: background 0.2s;
-}
-.h-float-sw::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform 0.2s;
-}
-.h-float.on {
-  color: var(--text);
-}
-.h-float.on .h-float-sw {
-  background: var(--green);
-}
-.h-float.on .h-float-sw::after {
-  transform: translateX(10px);
-}
-.h-stage {
-  position: relative;
-  flex: 1;
-  min-height: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .h-pearl {
   will-change: transform;
 }
-.h-stage .h-tip {
-  top: calc(50% - 110px);
+.h-ask {
+  text-align: center;
+  font-size: 1.32rem;
+  margin-top: 0;
 }
+/* Ask bar: keyboard | divider | placeholder | voice (waveform) pill, in Akaya's glass card style */
 .h-pill {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 14px;
-  padding: 6px;
-  border-radius: 28px;
+  margin: 12px 16px 0;
+  padding: 6px 6px 6px 4px;
+  border-radius: 99px;
   box-shadow:
     var(--shadow-lg),
     0 0 0 1px var(--line);
 }
-.h-pill-plus,
-.h-pill-mic {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  flex: none;
-}
-.h-pill-plus {
-  color: var(--text-2);
-  background: var(--surface-2);
-}
-.h-pill-mic {
-  color: #fff;
-  background: var(--g-brand);
-  box-shadow: 0 8px 18px -8px rgba(60, 40, 220, 0.75);
-}
-.h-pill-input {
+.h-pill-main {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
   height: 44px;
   text-align: left;
-  padding: 0 6px;
+}
+.h-pill-kb {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+  flex: none;
+}
+.h-pill-div {
+  width: 1px;
+  height: 22px;
+  background: var(--line-strong, rgba(127, 127, 160, 0.35));
+  margin-right: 12px;
+  flex: none;
+}
+.h-pill-ph {
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-3);
-}
-.h-strip {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 12px 16px calc(var(--nav-h) + 30px);
-}
-.h-strip::-webkit-scrollbar {
-  display: none;
-}
-.h-chip {
-  flex: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 230px;
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 99px;
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--text-2);
-  background: var(--surface);
-  border: 1px solid var(--line);
-}
-.h-chip span {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.screen.home-min.with-nav {
-  padding-bottom: 0;
+.h-pill-voice {
+  flex: none;
+  width: 66px;
+  height: 44px;
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--g-brand);
+  box-shadow: 0 8px 18px -8px rgba(60, 40, 220, 0.75);
+}
+.h-pill-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+.h-pill-wave i {
+  width: 3px;
+  height: calc(var(--h) * 20px);
+  border-radius: 3px;
+  background: #fff;
+  animation: hpw 1.3s ease-in-out infinite;
+  animation-delay: var(--d);
+  transform-origin: center;
+}
+@keyframes hpw {
+  50% {
+    transform: scaleY(0.55);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .h-pill-wave i {
+    animation: none;
+  }
 }

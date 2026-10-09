@@ -95,8 +95,11 @@ export function History() {
   const act = state.activity.find((a) => a.id === detail);
 
   return (
-    <Screen nav className="history">
+    <Screen className="history">
       <header className="hs-top">
+        <button className="icon-btn card" aria-label="Back to Home" onClick={() => nav('/home')}>
+          <Icon name="back" size={20} />
+        </button>
         <div className="hs-brand">
           <span className="hs-orb">
             <Pearl width={44} height={44} r={16} shadow={false} glow={0.2} />

@@ -28,7 +28,6 @@
   --r-lg: 22px;
   --r-xl: 28px;
   --ts: 1;
-  --nav-h: 76px;
 }
 
 :root[data-theme='light'] {

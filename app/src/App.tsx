@@ -1,11 +1,10 @@
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useEffect, useState, type ReactNode } from 'react';
 import { DeviceHostContext } from './components/deviceHost';
 import { useApp } from './state/store';
 import { useThemeSync } from './theme/useThemeSync';
 import { StatusBar } from './components/StatusBar';
 import { useShowStatusBar } from './components/useShowStatusBar';
-import { BottomNav } from './components/BottomNav';
 import { ToastProvider } from './components/Toast';
 import { SignUp } from './screens/SignUp';
 import { Login } from './screens/auth/Login';
@@ -31,8 +30,6 @@ import { Recorder } from './screens/vnotes/Recorder';
 import { NoteView } from './screens/vnotes/NoteView';
 import { FutureScheduler } from './future/FutureScheduler';
 
-const TAB_PATHS = ['/home', '/chat', '/voice', '/history', '/more'];
-
 function Guard({ children }: { children: ReactNode }) {
   const { state } = useApp();
   if (!state.auth.signedIn) return <Navigate to="/signup" replace />;
@@ -44,7 +41,8 @@ export function App() {
   const { state, logout } = useApp();
   const [device, setDevice] = useState<HTMLDivElement | null>(null);
   const theme = useThemeSync(state.settings.theme, state.settings.textSize);
-  useNativeShell(theme);
+  const navigate = useNavigate();
+  useNativeShell(theme, (to) => navigate(to, { replace: true }));
   // the fake status bar is for the desktop phone frame only; the Android app has the real one
   const showStatus = useShowStatusBar() && !isNativeApp();
 
@@ -59,8 +57,6 @@ export function App() {
       logout();
     });
   }, [emailSession, logout]);
-  const { pathname } = useLocation();
-  const showNav = state.auth.signedIn && state.onboardingDone && TAB_PATHS.some((p) => pathname.startsWith(p));
   const start = !state.auth.signedIn ? '/signup' : !state.onboardingDone ? '/onboarding' : '/home';
 
   return (
@@ -205,7 +201,6 @@ export function App() {
               />
               <Route path="*" element={<Navigate to={start} replace />} />
             </Routes>
-            {showNav && <BottomNav />}
           </ToastProvider>
         </DeviceHostContext.Provider>
       </div>

@@ -179,8 +179,11 @@ export function Voice() {
   }[phase];
 
   return (
-    <Screen nav className="voice">
+    <Screen className="voice">
       <header className="v-head">
+        <button className="icon-btn card" aria-label="Back to Home" onClick={() => nav('/home')}>
+          <Icon name="back" size={20} />
+        </button>
         <h2>Voice</h2>
         <span className="grow" />
         <button className="v-notes-btn" onClick={() => nav('/vnotes')}>
