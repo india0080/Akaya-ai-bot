@@ -5,6 +5,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { initialState, newMsg, chatTitle } from '../lib/mock';
 import { uid } from '../lib/time';
+import { auth } from '../auth';
 import type { Connection } from '../integrations/types';
 import type { VoiceNote } from '../notes/types';
 import type { Activity, AppState, Chat, FutureMessage, Note, Settings, TodayItem } from './types';
@@ -42,6 +43,7 @@ function useAppStore() {
         patch((s) => ({ ...s, auth: { signedIn: true, method, contact } })),
       finishOnboarding: () => patch((s) => ({ ...s, onboardingDone: true })),
       logout: () => {
+        void auth.signOut().catch(() => {});
         localStorage.removeItem(STORAGE_KEY);
         setState(initialState());
       },

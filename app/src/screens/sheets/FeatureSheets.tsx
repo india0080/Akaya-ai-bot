@@ -20,7 +20,12 @@ export function AgentsSheet({ open, onClose }: P) {
       <span className="label">Shopping & grocery</span>
       <div className="agent-apps">
         {AGENT_APPS.map((a) => (
-          <button key={a.id} className="card agent-app" onClick={() => window.open(a.url, '_blank', 'noopener')} aria-label={`Open ${a.name}`}>
+          <button
+            key={a.id}
+            className="card agent-app"
+            onClick={() => window.open(a.url, '_blank', 'noopener')}
+            aria-label={`Open ${a.name}`}
+          >
             <span className="aa-ic" style={{ background: a.grad }}>
               {a.emoji}
             </span>

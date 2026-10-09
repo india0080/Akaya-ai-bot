@@ -5,3 +5,10 @@ dev-dist
 *.local
 .DS_Store
 *.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+google-services.json
+android/app/release/

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Screen } from '../components/Screen';
 import { Logo } from '../components/Logo';
@@ -7,6 +7,9 @@ import { Pearl } from '../components/Pearl';
 import { Icon } from '../components/Icon';
 import { GoogleLogo } from '../components/GoogleLogo';
 import { useApp } from '../state/store';
+import { EmailSignUpForm } from './auth/EmailSignUpForm';
+import { DemoBadge } from './auth/AuthBits';
+import './auth/Auth.css';
 import './SignUp.css';
 
 type Tab = 'phone' | 'email';
@@ -14,9 +17,9 @@ type Tab = 'phone' | 'email';
 export function SignUp() {
   const { signIn } = useApp();
   const nav = useNavigate();
-  const [tab, setTab] = useState<Tab>('phone');
+  const [params] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(params.get('tab') === 'phone' ? 'phone' : 'email');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
   const [step, setStep] = useState<'start' | 'otp'>('start');
   const [otp, setOtp] = useState('');
   const [busy, setBusy] = useState<'google' | 'send' | 'verify' | null>(null);
@@ -24,8 +27,8 @@ export function SignUp() {
   const otpRef = useRef<HTMLInputElement>(null);
 
   const digits = phone.replace(/\D/g, '');
-  const valid = tab === 'phone' ? digits.length === 10 : /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
-  const contact = tab === 'phone' ? `+91 ${digits.slice(0, 5)} ${digits.slice(5)}` : email.trim();
+  const valid = digits.length === 10;
+  const contact = `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
 
   useEffect(() => {
     if (step !== 'otp') return;
@@ -55,7 +58,7 @@ export function SignUp() {
   const verify = () => {
     if (otp.length !== 6) return;
     setBusy('verify');
-    setTimeout(() => done(tab, contact), 800); // demo: any 6 digits are accepted
+    setTimeout(() => done('phone', contact), 800); // demo: any 6 digits are accepted
   };
 
   return (
@@ -94,7 +97,7 @@ export function SignUp() {
               </button>
               <div className="su-or">OR</div>
               <div className="su-tabs" role="tablist">
-                {(['phone', 'email'] as Tab[]).map((t) => (
+                {(['email', 'phone'] as Tab[]).map((t) => (
                   <button
                     key={t}
                     role="tab"
@@ -108,44 +111,38 @@ export function SignUp() {
                 ))}
               </div>
               {tab === 'phone' ? (
-                <label className="su-in">
-                  <span className="cc">
-                    <span className="flag" />
-                    +91
-                  </span>
-                  <input
-                    inputMode="numeric"
-                    autoComplete="tel-national"
-                    placeholder="98765 43210"
-                    value={phone}
-                    maxLength={11}
-                    onChange={(e) => {
-                      const d = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setPhone(d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d);
-                    }}
-                    onKeyDown={(e) => e.key === 'Enter' && sendOtp()}
-                    aria-label="Phone number"
-                  />
-                </label>
+                <>
+                  <label className="su-in">
+                    <span className="cc">
+                      <span className="flag" />
+                      +91
+                    </span>
+                    <input
+                      inputMode="numeric"
+                      autoComplete="tel-national"
+                      placeholder="98765 43210"
+                      value={phone}
+                      maxLength={11}
+                      onChange={(e) => {
+                        const d = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setPhone(d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d);
+                      }}
+                      onKeyDown={(e) => e.key === 'Enter' && sendOtp()}
+                      aria-label="Phone number"
+                    />
+                  </label>
+                  <button className="btn btn-primary btn-block su-cta" disabled={!valid || !!busy} onClick={sendOtp}>
+                    {busy === 'send' ? <span className="spinner light" /> : null}
+                    Send OTP
+                    <Icon name="chev" size={16} strokeWidth={2.6} />
+                  </button>
+                </>
               ) : (
-                <label className="su-in">
-                  <Icon name="mail" size={18} className="faint" />
-                  <input
-                    type="email"
-                    autoComplete="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendOtp()}
-                    aria-label="Email address"
-                  />
-                </label>
+                <>
+                  <DemoBadge />
+                  <EmailSignUpForm />
+                </>
               )}
-              <button className="btn btn-primary btn-block su-cta" disabled={!valid || !!busy} onClick={sendOtp}>
-                {busy === 'send' ? <span className="spinner light" /> : null}
-                Send OTP
-                <Icon name="chev" size={16} strokeWidth={2.6} />
-              </button>
             </div>
           </motion.div>
         ) : (
@@ -198,7 +195,7 @@ export function SignUp() {
                     setOtp('');
                   }}
                 >
-                  Change {tab === 'phone' ? 'number' : 'email'}
+                  Change number
                 </button>
                 <button className="link" disabled={resendIn > 0} onClick={() => setResendIn(30)}>
                   {resendIn > 0 ? `Resend in 0:${String(resendIn).padStart(2, '0')}` : 'Resend code'}

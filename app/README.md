@@ -8,11 +8,11 @@ feature screens (Translate, Future Message, Smart Note, Search, Upgrade, Support
 **Navigation:** a floating tab bar `Home | Chat | (Voice orb) | History | More`. The glowing centre orb
 (animated waveform) opens Voice. More holds settings.
 
-All data is sample data, stored in the browser (`localStorage`). There is no backend. AI replies, OTP and translation are mocked.
+All data is sample data, stored in the browser (`localStorage`). There is no backend. AI replies, phone OTP, Google sign-in and translation are mocked. **Email sign-up / log-in** uses Firebase Auth when configured, otherwise a clearly labelled local Demo mode (see below). An **Android APK** is built with Capacitor.
 
 ## Requirements
 
-- Node.js **20.19+** (or 22+) and npm
+- Node.js **20.19+** (or 22+) and npm. The Capacitor CLI (Android builds) needs **Node 22+**.
 
 ## Setup and scripts
 
@@ -25,12 +25,108 @@ npm run build:standalone  # single self-contained HTML → dist-standalone/index
 npm run lint           # ESLint (flat config, typescript-eslint, react-hooks)
 npm run format         # Prettier
 npm run typecheck      # tsc only
+npm run build:android  # Android web build + cap sync (see "Android app")
+npm run android:apk    # build:android + gradle assembleDebug
 ```
 
 - **Desktop:** the app renders inside a centred 390×844 phone frame with a status bar.
 - **Phone (or narrow window):** it runs full screen with safe-area insets.
 - **Install as an app (PWA):** deploy `dist/` to any static host over HTTPS. Then use "Add to Home Screen" (iOS) or "Install app" (Android/Chrome). The service worker precaches everything, so it works offline once installed.
 - **Standalone file:** `dist-standalone/index.html` has JS, CSS and fonts inlined and opens with a double click (`file://`). It has no service worker. Routing uses the URL hash, so it works without a server.
+
+## Email sign-in (`src/auth/`)
+
+Sign Up has **Email** (email + password), **Phone** (OTP, demo) and **Continue with Google** (demo). Email accounts get
+real screens: **Sign up** (with validation and a strength meter) → **Verify your email** → onboarding, plus **Log in**,
+**Forgot password** and **Log out** (More → Log out).
+
+| File | What |
+|---|---|
+| `src/auth/types.ts` | `AuthProvider` interface (`signUp`, `signIn`, `sendEmailVerification`, `reload`, `sendPasswordResetEmail`, `signOut`, `onAuthStateChanged`) and `AuthError` codes |
+| `src/auth/firebase.ts` | `FirebaseAuthProvider`: Firebase JS SDK (modular API, v13), loaded lazily |
+| `src/auth/localDemo.ts` | `LocalDemoAuthProvider`: **demo only**. Accounts live in this device's localStorage, with passwords hashed using PBKDF2-SHA256 and a random salt. No email is sent: verification is simulated with "Demo: mark as verified", and password reset only confirms the request. The UI shows a **DEMO MODE** badge. |
+| `src/auth/validation.ts` | Email format check; password rules (8+ characters, a letter and a number; strength rises with length, mixed case and symbols); confirm match; friendly error messages |
+| `src/auth/index.ts` | Picks Firebase when the four required `VITE_FIREBASE_*` values are set, otherwise Demo mode |
+| `src/screens/auth/` | `EmailSignUpForm`, `Login`, `VerifyEmail`, `ForgotPassword`, shared fields (`AuthBits`), `Auth.css` (light + dark) |
+
+Rules: an unverified account can't get into the app (log in sends it to *Verify your email*). Log in shows the same error
+for an unknown email and a wrong password, and *Forgot password* always says "if an account exists". If the provider ends
+the session, the app logs out too.
+
+### Firebase setup (production)
+
+1. In the [Firebase console](https://console.firebase.google.com/), create a project.
+2. Go to **Build → Authentication → Get started → Sign-in method** and enable **Email/Password**. Optionally set the
+   email templates' sender name and action URL under *Templates*.
+3. In **Project settings → Your apps**, add a **Web app** and copy its config values. The app runs in a WebView, so
+   it uses the Web SDK config.
+4. Also add an **Android app** with package name **`one.akaya.app`**. This is needed if you later add native Google
+   sign-in or FCM; for those, add the debug and release SHA-1 fingerprints (`cd android && ./gradlew signingReport`).
+   `google-services.json` is **not** needed for Email/Password through the Web SDK. If you add it, keep it out of git.
+5. In **Authentication → Settings → Authorized domains**, add `localhost` (the Android app serves from
+   `https://localhost`) and your web domain.
+6. Create `app/.env.local` (git-ignored; see `.env.example`):
+
+   ```bash
+   VITE_FIREBASE_API_KEY=...
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project
+   VITE_FIREBASE_APP_ID=1:...:web:...
+   VITE_FIREBASE_MESSAGING_SENDER_ID=...   # optional
+   VITE_FIREBASE_STORAGE_BUCKET=...        # optional
+   ```
+
+7. Rebuild (`npm run dev`, or `npm run android:apk` for the APK). The DEMO MODE badge disappears once Firebase is active.
+
+No keys are committed. Firebase web config values aren't secrets, but protect the project with Authorized domains, App
+Check and sensible quota settings.
+
+## Android app (Capacitor)
+
+The APK wraps the same Vite build in a WebView using Capacitor 8 (`capacitor.config.ts`, app ID **`one.akaya.app`**,
+name **Akaya**). The native project is in `android/`.
+
+- **Icon:** adaptive (pearl foreground on a deep-violet background) plus legacy icons, generated from `assets/` with
+  `npm run android:assets`.
+- **Splash:** light and dark variants; on Android 12+ the system splash shows the pearl icon on the theme background.
+- **Status bar:** edge-to-edge (Capacitor SystemBars); the web content draws under the bar using `env(safe-area-inset-*)`,
+  and `src/native/useNativeShell.ts` switches light/dark icons with the app theme.
+- **Back button:** closes the top sheet first, then goes back; on Home and Sign Up it minimises the app
+  (`src/native/backStack.ts`).
+- **Permissions:** `INTERNET`, `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS`. The mic permission is requested at runtime the
+  first time Voice or Voice Notes uses the microphone (Capacitor forwards the WebView request to Android).
+- The Android build omits the PWA service worker (`vite build --mode android`).
+
+### Build a debug APK
+
+Requirements: JDK 21, Android SDK (platform 36, build-tools 35+), Node 22+ for the Capacitor CLI.
+
+```bash
+npm install
+npm run build:android                  # vite build --mode android + npx cap sync android
+cd android && ./gradlew assembleDebug  # → android/app/build/outputs/apk/debug/app-debug.apk
+# or: npm run android:apk
+adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Release build (Play Store AAB)
+
+Debug APKs are signed with the local debug key and can't go to Play. For a release:
+
+1. Create an upload keystore **once** and keep it outside the repo (back it up; losing it means a key reset):
+   `keytool -genkeypair -v -keystore ~/keys/akaya-upload.jks -alias akaya-upload -keyalg RSA -keysize 2048 -validity 10000`
+2. Add the signing details to `~/.gradle/gradle.properties` (not the repo):
+   `AKAYA_UPLOAD_STORE_FILE=/home/you/keys/akaya-upload.jks`, `AKAYA_UPLOAD_STORE_PASSWORD=...`,
+   `AKAYA_UPLOAD_KEY_ALIAS=akaya-upload`, `AKAYA_UPLOAD_KEY_PASSWORD=...`
+3. Add a `signingConfigs.release` block in `android/app/build.gradle` that reads those properties, and set
+   `buildTypes.release.signingConfig signingConfigs.release`.
+4. Bump `versionCode` and `versionName` in `android/app/build.gradle`, then run
+   `npm run build:android && cd android && ./gradlew bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
+5. In Play Console, use **Play App Signing** (Google holds the app signing key; you upload with the upload key), then
+   upload the AAB to an internal testing track first.
+
+Without step 3, `./gradlew assembleRelease` produces an **unsigned** APK (`app-release-unsigned.apk`), which is useful for
+size checks only. Keystores (`*.jks`, `*.keystore`) are git-ignored.
 
 ## Tech stack
 
@@ -51,6 +147,9 @@ There is no UI kit, CSS-in-JS or state library: anyone who knows React can read 
 
 ```
 public/                 favicon, apple-touch icon, PWA icons
+assets/                 source images for the Android icon + splash (@capacitor/assets)
+android/                Capacitor Android project (app ID one.akaya.app)
+capacitor.config.ts     Capacitor config
 src/
   main.tsx              entry: fonts, global CSS, providers, router
   App.tsx               phone frame, status bar, routes, auth/onboarding guard, bottom nav
@@ -70,11 +169,13 @@ src/
     history.ts          builds the History feed (chats, voice, floating, translations, reminders, notes…)
   components/           reusable UI: Pearl, Sheet, BottomNav, StatusBar, Toast, Controls
                         (Toggle, Segmented, RangeSlider), Icon, Logo, Avatar, ScreenHeader…
+  auth/                 email auth: AuthProvider interface, Firebase + LocalDemo providers, validation
+  native/               Capacitor glue: status bar, splash, Android back button stack
   integrations/         Apps & Integrations: catalog (100 apps), provider interface, Mock/Composio/Nango providers
   notes/                Voice Notes: modes, recorder (mic + speech), IndexedDB audio store, notes providers, export
   screens/
     Apps.tsx (+ apps/AppSheet.tsx), vnotes/ (VoiceNotes, Recorder, NoteView, NotePanels, MindMap),
-    SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodayRow,
+    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodayRow,
     FeatureSlider, RecentChats), Chat, Voice, More, Translate, FutureMessages, Notes,
     Search, History (unified timeline), Upgrade, Support
     sheets/             bottom sheets: Notifications, Read Screen, Today, Agents, Explore, Loan

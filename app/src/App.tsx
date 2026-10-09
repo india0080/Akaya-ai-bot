@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { DeviceHostContext } from './components/deviceHost';
 import { useApp } from './state/store';
 import { useThemeSync } from './theme/useThemeSync';
@@ -8,6 +8,11 @@ import { useShowStatusBar } from './components/useShowStatusBar';
 import { BottomNav } from './components/BottomNav';
 import { ToastProvider } from './components/Toast';
 import { SignUp } from './screens/SignUp';
+import { Login } from './screens/auth/Login';
+import { VerifyEmail } from './screens/auth/VerifyEmail';
+import { ForgotPassword } from './screens/auth/ForgotPassword';
+import { auth } from './auth';
+import { isNativeApp, useNativeShell } from './native/useNativeShell';
 import { Onboarding } from './screens/Onboarding';
 import { Home } from './screens/Home';
 import { Chat } from './screens/Chat';
@@ -35,10 +40,24 @@ function Guard({ children }: { children: ReactNode }) {
 }
 
 export function App() {
-  const { state } = useApp();
+  const { state, logout } = useApp();
   const [device, setDevice] = useState<HTMLDivElement | null>(null);
-  useThemeSync(state.settings.theme, state.settings.textSize);
-  const showStatus = useShowStatusBar();
+  const theme = useThemeSync(state.settings.theme, state.settings.textSize);
+  useNativeShell(theme);
+  // the fake status bar is for the desktop phone frame only; the Android app has the real one
+  const showStatus = useShowStatusBar() && !isNativeApp();
+
+  // An email session that ended in the auth provider (signed out elsewhere, account deleted) signs the app out too.
+  const emailSession = state.auth.signedIn && state.auth.method === 'email';
+  useEffect(() => {
+    if (!emailSession) return;
+    let done = false;
+    return auth.onAuthStateChanged((u) => {
+      if (u || done) return;
+      done = true;
+      logout();
+    });
+  }, [emailSession, logout]);
   const { pathname } = useLocation();
   const showNav = state.auth.signedIn && state.onboardingDone && TAB_PATHS.some((p) => pathname.startsWith(p));
   const start = !state.auth.signedIn ? '/signup' : !state.onboardingDone ? '/onboarding' : '/home';
@@ -52,6 +71,12 @@ export function App() {
             <Routes>
               <Route path="/" element={<Navigate to={start} replace />} />
               <Route path="/signup" element={state.auth.signedIn ? <Navigate to={start} replace /> : <SignUp />} />
+              <Route path="/login" element={state.auth.signedIn ? <Navigate to={start} replace /> : <Login />} />
+              <Route path="/forgot" element={<ForgotPassword />} />
+              <Route
+                path="/verify-email"
+                element={state.auth.signedIn ? <Navigate to={start} replace /> : <VerifyEmail />}
+              />
               <Route
                 path="/onboarding"
                 element={!state.auth.signedIn ? <Navigate to="/signup" replace /> : <Onboarding />}

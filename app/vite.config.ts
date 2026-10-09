@@ -19,35 +19,39 @@ function inlineIcons(): Plugin {
 
 // `npm run build`             -> installable PWA in dist/
 // `npm run build:standalone`  -> one self-contained HTML file in dist-standalone/ (opens via double-click)
+// `npm run build:android`     -> dist/ without the service worker, synced into android/ by Capacitor
 export default defineConfig(({ mode }) => {
   const standalone = mode === 'standalone';
+  const android = mode === 'android';
   return {
     base: './',
     plugins: [
       react(),
       standalone
         ? [viteSingleFile(), inlineIcons()]
-        : VitePWA({
-            registerType: 'autoUpdate',
-            includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
-            manifest: {
-              name: 'Akaya: Your intelligent assistant',
-              short_name: 'Akaya',
-              description: 'Chat, speak, translate and get things done with one bubble.',
-              theme_color: '#7625ef',
-              background_color: '#f4f1fc',
-              display: 'standalone',
-              orientation: 'portrait',
-              start_url: './',
-              scope: './',
-              icons: [
-                { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-                { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
-                { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-              ],
-            },
-            workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
-          }),
+        : android
+          ? [] // the APK bundles its files; a service worker would only add stale-cache risk
+          : VitePWA({
+              registerType: 'autoUpdate',
+              includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+              manifest: {
+                name: 'Akaya: Your intelligent assistant',
+                short_name: 'Akaya',
+                description: 'Chat, speak, translate and get things done with one bubble.',
+                theme_color: '#7625ef',
+                background_color: '#f4f1fc',
+                display: 'standalone',
+                orientation: 'portrait',
+                start_url: './',
+                scope: './',
+                icons: [
+                  { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+                  { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+                  { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+                ],
+              },
+              workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
+            }),
     ],
     build: standalone
       ? { outDir: 'dist-standalone', assetsInlineLimit: 100_000_000, cssCodeSplit: false }

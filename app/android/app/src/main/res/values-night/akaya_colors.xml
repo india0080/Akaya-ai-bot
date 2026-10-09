@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="akaya_bg">#0B0A1A</color>
+    <color name="colorPrimary">#9A5CFF</color>
+    <color name="colorPrimaryDark">#0B0A1A</color>
+    <color name="colorAccent">#FF9A5C</color>
+</resources>

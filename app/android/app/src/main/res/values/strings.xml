@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Akaya</string>
+    <string name="title_activity_main">Akaya</string>
+    <string name="package_name">one.akaya.app</string>
+    <string name="custom_url_scheme">one.akaya.app</string>
+</resources>

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { createPortal } from 'react-dom';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { pushBackHandler } from '../native/backStack';
 import { Icon } from './Icon';
 import { useDeviceHost } from './deviceHost';
 import './Sheet.css';
@@ -17,6 +18,8 @@ interface Props {
 /** Bottom sheet rendered inside the phone (#device). Drag down or tap the backdrop to close. */
 export function Sheet({ open, onClose, title, children, height = 86 }: Props) {
   const host = useDeviceHost();
+  // Android back button closes the newest open sheet first
+  useEffect(() => (open ? pushBackHandler(onClose) : undefined), [open, onClose]);
   if (!host) return null;
   return createPortal(
     <AnimatePresence>

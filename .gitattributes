@@ -5,3 +5,5 @@
 # To move media to Git LFS later:
 # marketing/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
 # design/**/*.png filter=lfs diff=lfs merge=lfs -text
+*.bat text eol=crlf
+*.jar binary
