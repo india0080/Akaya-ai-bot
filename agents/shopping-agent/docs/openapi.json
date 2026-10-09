@@ -1,0 +1,1439 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Akaya Shopping Agent API",
+    "version": "0.1.0",
+    "description": "Multi-store product search for India with ranking (price, rating, reviews, seller trust, delivery, fake-review signals), compare, price history, watchlist and price alerts. Runs on the Mock provider (SAMPLE data) until real provider keys are configured. The agent never checks out: \"Buy\" links open the store."
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/providers": {
+      "get": {
+        "summary": "Data providers and whether they are connected",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/parse": {
+      "post": {
+        "summary": "Parse a natural-language query (EN / HI / Hinglish)",
+        "tags": [
+          "search"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "raw": {
+                      "type": "string"
+                    },
+                    "q": {
+                      "type": "string"
+                    },
+                    "filters": {
+                      "type": "object",
+                      "properties": {
+                        "minPrice": {
+                          "type": "number"
+                        },
+                        "maxPrice": {
+                          "type": "number"
+                        },
+                        "minRating": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 5
+                        },
+                        "maxDeliveryDays": {
+                          "type": "number"
+                        },
+                        "stores": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "enum": [
+                              "amazon",
+                              "flipkart",
+                              "myntra",
+                              "meesho",
+                              "croma",
+                              "ajio",
+                              "reliance",
+                              "tatacliq",
+                              "nykaa",
+                              "other"
+                            ]
+                          }
+                        },
+                        "hideHighFakeRisk": {
+                          "type": "boolean"
+                        },
+                        "inStockOnly": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": false
+                    },
+                    "hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "lang": {
+                      "type": "string",
+                      "enum": [
+                        "en",
+                        "hi",
+                        "hinglish"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "raw",
+                    "q",
+                    "filters",
+                    "hints",
+                    "lang"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/search": {
+      "post": {
+        "summary": "Start a multi-store search job",
+        "tags": [
+          "search"
+        ],
+        "description": "Returns a job. Poll GET /api/jobs/{id} or stream GET /api/jobs/{id}/events. With `wait: true` the response includes results.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200,
+                    "description": "Natural language, e.g. \"school bag under 1500\" or \"1500 se kam ka basta\""
+                  },
+                  "filters": {
+                    "type": "object",
+                    "properties": {
+                      "minPrice": {
+                        "type": "number"
+                      },
+                      "maxPrice": {
+                        "type": "number"
+                      },
+                      "minRating": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 5
+                      },
+                      "maxDeliveryDays": {
+                        "type": "number"
+                      },
+                      "stores": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "amazon",
+                            "flipkart",
+                            "myntra",
+                            "meesho",
+                            "croma",
+                            "ajio",
+                            "reliance",
+                            "tatacliq",
+                            "nykaa",
+                            "other"
+                          ]
+                        }
+                      },
+                      "hideHighFakeRisk": {
+                        "type": "boolean"
+                      },
+                      "inStockOnly": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "sort": {
+                    "type": "string",
+                    "enum": [
+                      "relevance",
+                      "price_asc",
+                      "price_desc",
+                      "rating",
+                      "delivery",
+                      "discount"
+                    ]
+                  },
+                  "preset": {
+                    "description": "Ranking weights preset",
+                    "type": "string",
+                    "enum": [
+                      "balanced",
+                      "cheapest",
+                      "fastest",
+                      "quality"
+                    ]
+                  },
+                  "wait": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "query"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "description": "SearchResult when done"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "description": "SearchResult when done"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/searches/recent": {
+      "get": {
+        "summary": "Recent searches for the user",
+        "tags": [
+          "search"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/jobs/{id}": {
+      "get": {
+        "summary": "Job status, progress and result",
+        "tags": [
+          "jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "description": "SearchResult when done"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/{id}/events": {
+      "get": {
+        "summary": "SSE stream of job progress (events: progress, status, done)",
+        "tags": [
+          "jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/products/{key}": {
+      "get": {
+        "summary": "Product with ranked offers from every store",
+        "tags": [
+          "products"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "key",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "brand": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "emoji": {
+                      "type": "string"
+                    },
+                    "rank": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "badges": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "best_price",
+                          "best_rated",
+                          "best_value",
+                          "fastest"
+                        ]
+                      }
+                    },
+                    "best": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "productKey": {
+                          "type": "string"
+                        },
+                        "store": {
+                          "type": "string",
+                          "enum": [
+                            "amazon",
+                            "flipkart",
+                            "myntra",
+                            "meesho",
+                            "croma",
+                            "ajio",
+                            "reliance",
+                            "tatacliq",
+                            "nykaa",
+                            "other"
+                          ]
+                        },
+                        "storeName": {
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "brand": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "emoji": {
+                          "type": "string"
+                        },
+                        "price": {
+                          "type": "number"
+                        },
+                        "mrp": {
+                          "type": "number"
+                        },
+                        "currency": {
+                          "type": "string",
+                          "enum": [
+                            "INR"
+                          ]
+                        },
+                        "rating": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 5
+                        },
+                        "ratingCount": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "reviewCount": {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        "histogram": {
+                          "minItems": 5,
+                          "maxItems": 5,
+                          "type": "array",
+                          "items": {
+                            "type": "number"
+                          }
+                        },
+                        "verifiedShare": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "recentShare": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "seller": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "rating": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 5
+                            },
+                            "years": {
+                              "type": "number"
+                            },
+                            "fulfilled": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "delivery": {
+                          "type": "object",
+                          "properties": {
+                            "days": {
+                              "type": "number"
+                            },
+                            "free": {
+                              "type": "boolean"
+                            },
+                            "cod": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "days",
+                            "free"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "inStock": {
+                          "type": "boolean"
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "specs": {
+                          "default": {},
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        },
+                        "score": {
+                          "type": "number"
+                        },
+                        "breakdown": {
+                          "type": "object",
+                          "properties": {
+                            "price": {
+                              "type": "number"
+                            },
+                            "rating": {
+                              "type": "number"
+                            },
+                            "reviews": {
+                              "type": "number"
+                            },
+                            "trust": {
+                              "type": "number"
+                            },
+                            "delivery": {
+                              "type": "number"
+                            },
+                            "fakePenalty": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "price",
+                            "rating",
+                            "reviews",
+                            "trust",
+                            "delivery",
+                            "fakePenalty"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "fakeRisk": {
+                          "type": "object",
+                          "properties": {
+                            "score": {
+                              "type": "number"
+                            },
+                            "level": {
+                              "type": "string",
+                              "enum": [
+                                "low",
+                                "medium",
+                                "high"
+                              ]
+                            },
+                            "signals": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "required": [
+                            "score",
+                            "level",
+                            "signals"
+                          ],
+                          "additionalProperties": false
+                        },
+                        "discountPct": {
+                          "type": "number"
+                        },
+                        "affiliateUrl": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "productKey",
+                        "store",
+                        "storeName",
+                        "title",
+                        "brand",
+                        "category",
+                        "price",
+                        "mrp",
+                        "currency",
+                        "rating",
+                        "ratingCount",
+                        "reviewCount",
+                        "seller",
+                        "delivery",
+                        "inStock",
+                        "url",
+                        "specs",
+                        "source",
+                        "sample",
+                        "score",
+                        "breakdown",
+                        "fakeRisk",
+                        "discountPct",
+                        "affiliateUrl"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "offers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "productKey": {
+                            "type": "string"
+                          },
+                          "store": {
+                            "type": "string",
+                            "enum": [
+                              "amazon",
+                              "flipkart",
+                              "myntra",
+                              "meesho",
+                              "croma",
+                              "ajio",
+                              "reliance",
+                              "tatacliq",
+                              "nykaa",
+                              "other"
+                            ]
+                          },
+                          "storeName": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "brand": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "emoji": {
+                            "type": "string"
+                          },
+                          "price": {
+                            "type": "number"
+                          },
+                          "mrp": {
+                            "type": "number"
+                          },
+                          "currency": {
+                            "type": "string",
+                            "enum": [
+                              "INR"
+                            ]
+                          },
+                          "rating": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          },
+                          "ratingCount": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "reviewCount": {
+                            "type": "integer",
+                            "minimum": -9007199254740991,
+                            "maximum": 9007199254740991
+                          },
+                          "histogram": {
+                            "minItems": 5,
+                            "maxItems": 5,
+                            "type": "array",
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "verifiedShare": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "recentShare": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "seller": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string"
+                              },
+                              "rating": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 5
+                              },
+                              "years": {
+                                "type": "number"
+                              },
+                              "fulfilled": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "delivery": {
+                            "type": "object",
+                            "properties": {
+                              "days": {
+                                "type": "number"
+                              },
+                              "free": {
+                                "type": "boolean"
+                              },
+                              "cod": {
+                                "type": "boolean"
+                              }
+                            },
+                            "required": [
+                              "days",
+                              "free"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "inStock": {
+                            "type": "boolean"
+                          },
+                          "url": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "specs": {
+                            "default": {},
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "sample": {
+                            "type": "boolean"
+                          },
+                          "score": {
+                            "type": "number"
+                          },
+                          "breakdown": {
+                            "type": "object",
+                            "properties": {
+                              "price": {
+                                "type": "number"
+                              },
+                              "rating": {
+                                "type": "number"
+                              },
+                              "reviews": {
+                                "type": "number"
+                              },
+                              "trust": {
+                                "type": "number"
+                              },
+                              "delivery": {
+                                "type": "number"
+                              },
+                              "fakePenalty": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "price",
+                              "rating",
+                              "reviews",
+                              "trust",
+                              "delivery",
+                              "fakePenalty"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "fakeRisk": {
+                            "type": "object",
+                            "properties": {
+                              "score": {
+                                "type": "number"
+                              },
+                              "level": {
+                                "type": "string",
+                                "enum": [
+                                  "low",
+                                  "medium",
+                                  "high"
+                                ]
+                              },
+                              "signals": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "required": [
+                              "score",
+                              "level",
+                              "signals"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "discountPct": {
+                            "type": "number"
+                          },
+                          "affiliateUrl": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "productKey",
+                          "store",
+                          "storeName",
+                          "title",
+                          "brand",
+                          "category",
+                          "price",
+                          "mrp",
+                          "currency",
+                          "rating",
+                          "ratingCount",
+                          "reviewCount",
+                          "seller",
+                          "delivery",
+                          "inStock",
+                          "url",
+                          "specs",
+                          "source",
+                          "sample",
+                          "score",
+                          "breakdown",
+                          "fakeRisk",
+                          "discountPct",
+                          "affiliateUrl"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "priceRange": {
+                      "type": "array",
+                      "items": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "number"
+                          }
+                        ]
+                      },
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "key",
+                    "title",
+                    "brand",
+                    "category",
+                    "rank",
+                    "score",
+                    "badges",
+                    "best",
+                    "offers",
+                    "priceRange",
+                    "sample"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{key}/history": {
+      "get": {
+        "summary": "Price history per store + buy-now verdict",
+        "tags": [
+          "products"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "default": 90,
+              "type": "integer",
+              "minimum": 7,
+              "maximum": 365
+            },
+            "in": "query",
+            "name": "days",
+            "required": false
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "key",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/compare": {
+      "post": {
+        "summary": "Side-by-side comparison of 2–4 products",
+        "tags": [
+          "products"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "keys": {
+                    "minItems": 2,
+                    "maxItems": 4,
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/watchlist": {
+      "get": {
+        "summary": "Watchlist with current prices",
+        "tags": [
+          "watchlist"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Watch a product / set a price alert",
+        "tags": [
+          "watchlist"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "offerId": {
+                    "type": "string"
+                  },
+                  "productKey": {
+                    "type": "string"
+                  },
+                  "targetPrice": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "anyDrop": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/watchlist/{id}": {
+      "patch": {
+        "summary": "Update target price / drop alerts",
+        "tags": [
+          "watchlist"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "targetPrice": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "anyDrop": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Stop watching",
+        "tags": [
+          "watchlist"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/watchlist/check": {
+      "post": {
+        "summary": "Run the price checker now (normally periodic)",
+        "tags": [
+          "watchlist"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "In-app notifications",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "post": {
+        "summary": "Mark notifications read",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/stream": {
+      "get": {
+        "summary": "SSE stream of new notifications (event: notification)",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "user",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/subscribe": {
+      "post": {
+        "summary": "Register a Web Push subscription or FCM token (delivery is a stub until keys are set)",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "webpush",
+                      "fcm"
+                    ]
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 10
+                  }
+                },
+                "required": [
+                  "kind",
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/test": {
+      "post": {
+        "summary": "Send a test notification",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "default": "Test from Akaya Shopping",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/stores": {
+      "get": {
+        "summary": "Known stores",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8787"
+    }
+  ],
+  "tags": [
+    {
+      "name": "search"
+    },
+    {
+      "name": "jobs"
+    },
+    {
+      "name": "products"
+    },
+    {
+      "name": "watchlist"
+    },
+    {
+      "name": "notifications"
+    },
+    {
+      "name": "meta"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+.toggle {
+  width: 46px;
+  height: 28px;
+  border-radius: 99px;
+  background: var(--surface-3);
+  position: relative;
+  flex: none;
+  transition: background 0.2s;
+  border: 1px solid var(--line);
+}
+.toggle span {
+  position: absolute;
+  left: 3px;
+  top: 2.5px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.22s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+.toggle.on {
+  background: var(--green);
+  border-color: transparent;
+}
+.toggle.on span {
+  transform: translateX(18px);
+}
+
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 99px;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+.seg button {
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-weight: 700;
+  font-size: 0.72rem;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.seg button.on {
+  background: var(--g-brand);
+  color: #fff;
+  box-shadow: 0 4px 12px -4px rgba(2, 105, 248, 0.6);
+}
+.seg.full {
+  display: flex;
+  width: 100%;
+}
+.seg.full button {
+  flex: 1;
+  justify-content: center;
+  padding: 8px 6px;
+}
+
+.range-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.range-top b {
+  color: var(--violet);
+}
+:root[data-theme='dark'] .range-top b {
+  color: #b48bff;
+}
+.range input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 9px;
+  background:
+    linear-gradient(90deg, var(--blue), var(--violet)) 0 / var(--p) 100% no-repeat,
+    var(--surface-3);
+  outline: none;
+}
+.range input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--violet);
+  box-shadow: 0 3px 8px rgba(80, 40, 200, 0.35);
+}
+.range input::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--violet);
+}

@@ -1,0 +1,1156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akaya bubble: motion system demo</title>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&family=Manrope:wght@500;600;700;800&display=swap">
+<style>
+  :root { --blue:#0269f8; --violet:#7625ef; --cyan:#0dabf4; --green:#08da73; --orange:#E8743B; --navy:#141a33; --bg:#080b1d;
+    --ff: Manrope, "Noto Sans Devanagari", "Noto Sans CJK JP", "Noto Sans JP", "Noto Sans Tamil", "Noto Sans Arabic", "Noto Color Emoji", system-ui, sans-serif; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; background:var(--bg); color:#e9ecff; font-family:Manrope,system-ui,sans-serif; }
+  body { min-height:100vh; display:flex; align-items:center; justify-content:center; overflow:auto; }
+  #app { position:relative; width:1280px; height:720px; flex:none; overflow:hidden;
+    background: radial-gradient(900px 500px at 50% 45%, #141a44 0%, #0a0d24 60%, #070a1a 100%); }
+  #app::before { content:""; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(500px 300px at 8% 0%, rgba(2,105,248,.22), transparent 70%), radial-gradient(500px 320px at 100% 100%, rgba(118,37,239,.22), transparent 70%); }
+  header { position:absolute; left:24px; top:16px; right:24px; height:40px; display:flex; align-items:center; gap:14px; }
+  header img { height:30px; }
+  header .t { font:700 21px/1 Comfortaa, sans-serif; color:#fff; letter-spacing:.2px; }
+  header .t span { color:#9fb3ff; }
+  header .hint { margin-left:auto; font-size:13px; color:#8f98c9; font-weight:600; }
+  /* ---- controls ---- */
+  #controls { position:absolute; left:24px; top:72px; width:262px; bottom:20px; display:flex; flex-direction:column; gap:8px; }
+  #controls h3 { margin:6px 0 2px; font:700 12px/1 Manrope; letter-spacing:1.6px; text-transform:uppercase; color:#7f8ac0; }
+  .pills { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .pill { appearance:none; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#dfe4ff; border-radius:999px;
+    padding:7px 10px; font:700 12.5px/1.1 Manrope, sans-serif; display:flex; align-items:center; gap:7px; cursor:pointer; white-space:nowrap; transition:background .2s, border-color .2s, transform .15s; }
+  .pill:hover { background:rgba(255,255,255,.1); }
+  .pill:active { transform:scale(.96); }
+  .pill .d { width:9px; height:9px; border-radius:50%; flex:none; box-shadow:0 0 8px currentColor; }
+  .pill.on { background:linear-gradient(135deg, var(--c, #7625ef), rgba(255,255,255,.08)); border-color:rgba(255,255,255,.5); color:#fff; box-shadow:0 0 18px -4px var(--c, #7625ef); }
+  .pill.wide { grid-column:span 2; justify-content:center; }
+  .pill.act { background:rgba(232,116,59,.14); border-color:rgba(232,116,59,.5); }
+  .pill.act.on { background:linear-gradient(135deg,#E8743B,#b8501f); }
+  #api { margin-top:auto; font:600 12px/1.45 ui-monospace, "DejaVu Sans Mono", monospace; color:#b9c4ff; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.08);
+    border-radius:12px; padding:10px 12px; min-height:58px; }
+  #api .k { color:#7f8ac0; } #api .s { color:#8ef0c0; }
+  /* ---- stage ---- */
+  #stage { position:absolute; left:304px; top:66px; width:600px; height:634px; border-radius:28px; overflow:hidden;
+    background: radial-gradient(420px 360px at 50% 46%, rgba(40,48,110,.55), rgba(10,13,36,.0) 70%);
+    border:1px solid rgba(255,255,255,.06); }
+  #stage::before { content:""; position:absolute; inset:0; opacity:.35; pointer-events:none;
+    background-image: radial-gradient(rgba(160,175,255,.35) 1px, transparent 1.4px); background-size:24px 24px;
+    mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); -webkit-mask-image: radial-gradient(closest-side, #000 30%, transparent 100%); }
+  #cv { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:pointer; }
+  #label { position:absolute; left:0; right:0; bottom:26px; text-align:center; pointer-events:none; }
+  #label .name { font:700 30px/1.1 Comfortaa, sans-serif; color:#fff; display:inline-flex; align-items:center; gap:12px; }
+  #label .name i { width:13px; height:13px; border-radius:50%; background:var(--c); box-shadow:0 0 14px var(--c); }
+  #label .note { margin-top:8px; font:600 14px/1.2 Manrope; color:#9aa5d6; }
+  #stagehint { position:absolute; top:16px; left:0; right:0; text-align:center; font:600 12px Manrope; color:#6f79ad; pointer-events:none; }
+  /* ---- phone ---- */
+  #phoneWrap { position:absolute; left:930px; top:62px; width:326px; height:644px; }
+  #phone { position:absolute; left:8px; top:0; width:310px; height:624px; border-radius:44px; background:#0c0e18;
+    box-shadow:0 0 0 2px #2a2f45, 0 30px 60px -20px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.06); }
+  #screen { position:absolute; left:9px; top:9px; width:292px; height:606px; border-radius:36px; overflow:hidden; background:#f4f1ec; }
+  .sb { height:28px; display:flex; align-items:center; justify-content:space-between; padding:0 20px 0 22px; font:700 12px Manrope; color:#1b1f2e; }
+  .sb .cam { width:10px; height:10px; border-radius:50%; background:#0c0e18; position:absolute; left:50%; top:9px; transform:translateX(-50%); }
+  .chathead { height:48px; display:flex; align-items:center; gap:9px; padding:0 12px; background:#fff; border-bottom:1px solid #ebe6df; }
+  .av { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,#7aa7ff,#9b7bff); color:#fff; display:grid; place-items:center; font:800 14px Manrope; }
+  .chathead b { font:800 14px Manrope; color:#1b1f2e; display:block; } .chathead small { font:600 11px Manrope; color:#3fae6a; }
+  .msgs { position:absolute; left:0; right:0; top:76px; bottom:60px; padding:12px 10px; display:flex; flex-direction:column; gap:8px; }
+  .day { align-self:center; font:700 10px Manrope; color:#6c6f7d; background:#fff; padding:3px 9px; border-radius:8px; }
+  .m { max-width:78%; padding:8px 10px 6px; border-radius:14px; font:600 12.5px/1.35 var(--ff); color:#1b1f2e; box-shadow:0 1px 1px rgba(0,0,0,.06); }
+  .m small { display:block; text-align:right; font:600 9.5px Manrope; color:#8a8d99; margin-top:2px; }
+  .m.in { background:#fff; align-self:flex-start; border-top-left-radius:4px; }
+  .m.out { background:#dcebff; align-self:flex-end; border-top-right-radius:4px; transform-origin:100% 100%; }
+  .inputbar { position:absolute; left:8px; right:8px; bottom:10px; height:44px; display:flex; gap:8px; align-items:center; }
+  .inputbar .f { flex:1; height:44px; border-radius:22px; background:#fff; display:flex; align-items:center; padding:0 14px; font:600 12px/1.25 var(--ff); color:#9a9ca6; box-shadow:0 1px 2px rgba(0,0,0,.08); overflow:hidden; }
+  .inputbar .f.filled { color:#1b1f2e; }
+  .inputbar .send { width:44px; height:44px; border-radius:50%; background:#0269f8; display:grid; place-items:center; flex:none; }
+  /* morphing floating button ⇄ panel */
+  #morph { position:absolute; overflow:hidden; z-index:5; }
+  #spark { position:absolute; left:50%; top:50%; width:24px; height:24px; transform:translate(-50%,-50%); }
+  #pc { position:absolute; width:272px; height:322px; color:#e8ebff; }
+  .ph { height:42px; display:flex; align-items:center; padding:0 8px 0 10px; gap:8px; }
+  .drag { display:grid; grid-template-columns:3px 3px; gap:3px; } .drag i { width:3px; height:3px; border-radius:50%; background:#5d6696; }
+  .avslot { width:38px; height:34px; flex:none; }
+  .akpill { background:#fff; border-radius:999px; padding:4px 10px; display:flex; } .akpill img { height:13px; }
+  .ph .ic { margin-left:auto; display:flex; gap:10px; } .ph .ic svg { width:15px; height:15px; stroke:#aab2dc; }
+  .tabs { display:flex; align-items:center; gap:6px; padding:0 10px; height:36px; }
+  .dd { background:#222a4d; border-radius:999px; padding:5px 9px; font:700 11px Manrope; display:flex; gap:4px; align-items:center; }
+  .tab { font:700 10.5px/1.1 Manrope, "Noto Sans Devanagari"; color:#aab2dc; text-align:center; padding:4px 8px; border-radius:9px; }
+  .tab b { display:block; font-size:11px; } .tab.on { background:#2a3262; color:#b7a2ff; }
+  .tools { display:flex; justify-content:space-between; padding:2px 10px 0; height:48px; align-items:center; }
+  .tool { text-align:center; font:700 9.5px Manrope; color:#c9cfee; display:flex; flex-direction:column; align-items:center; gap:3px; padding:3px 6px; border-radius:9px; }
+  .tool svg { width:16px; height:16px; stroke:#d7dcf7; } .tool.on { background:#262e58; }
+  .chev { width:26px; height:26px; border:1px solid #39416b; border-radius:8px; display:grid; place-items:center; }
+  .card { margin:6px 10px 0; background:#1c2244; border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:10px 10px 10px; height:178px; position:relative; }
+  .card .top { display:flex; align-items:center; gap:6px; }
+  .card .lbl { font:800 12px Manrope; color:var(--c,#b7a2ff); }
+  .card .btns { margin-left:auto; display:flex; gap:4px; }
+  .card .btn { font:700 9.5px Manrope; color:#c9cfee; text-align:center; padding:4px 6px; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .card .btn svg { width:13px; height:13px; stroke:#d7dcf7; } .card .btn.hi { background:#2f3770; color:#fff; }
+  .card .said { margin-top:10px; font:600 11px/1.4 var(--ff); color:#9aa3d1; min-height:16px; }
+  .card .txt { margin-top:8px; font:700 13px/1.4 var(--ff); color:#fff; }
+  .langs { margin-top:12px; display:flex; flex-wrap:wrap; gap:4px; } .langs i { font:700 9.5px/1 var(--ff); font-style:normal; color:#cfe9ff; background:#26305e; border-radius:999px; padding:4px 7px; }
+  .meter { display:flex; gap:3px; align-items:flex-end; height:22px; margin-top:10px; } .meter i { width:5px; border-radius:3px; background:#0dabf4; }
+  #mini { position:absolute; width:76px; height:76px; z-index:7; pointer-events:none; }
+  #phoneCap { position:absolute; left:0; right:0; bottom:0; text-align:center; font:700 12px Manrope; color:#7f8ac0; letter-spacing:.3px; }
+  /* fake cursor (tour / recording) */
+  #cursor { position:absolute; left:0; top:0; width:26px; height:26px; z-index:50; pointer-events:none; display:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+  .ripple { position:absolute; z-index:49; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; border:2px solid rgba(255,255,255,.9); pointer-events:none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMzQyIDEwMjEiIHdpZHRoPSIzMzQyIiBoZWlnaHQ9IjEwMjEiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iY3VwMmQiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMTk1Ny4wIiB5MT0iMCIgeDI9IjI1NzkuMCIgeTI9IjAiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzAyNjlmOCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc2MjVlZiIvPjwvbGluZWFyR3JhZGllbnQ+PGxpbmVhckdyYWRpZW50IGlkPSJiYXIyZCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHgxPSIwIiB5MT0iNTkxLjAiIHgyPSIwIiB5Mj0iOTAxLjAiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzNjNDdmNCIvPjxzdG9wIG9mZnNldD0iMC41IiBzdG9wLWNvbG9yPSIjMGRhYmY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDhkYTczIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGc+PHBhdGggZD0iTTQzOCA5MDVRMzY1IDkwNSAzMDcuMCA4NjguNVEyNDkgODMyIDIxNS41IDc2OS41UTE4MiA3MDcgMTgyIDYyOFExODIgNTQ5IDIxOC41IDQ4Ni4wUTI1NSA0MjMgMzE3LjUgMzg2LjVRMzgwIDM1MCA0NTggMzUwUTUzNiAzNTAgNTk4LjAgMzg2LjVRNjYwIDQyMyA2OTYuNSA0ODYuMFE3MzMgNTQ5IDczMyA2MjhINjk0UTY5NCA3MDcgNjYwLjUgNzY5LjVRNjI3IDgzMiA1NjkuMCA4NjguNVE1MTEgOTA1IDQzOCA5MDVaTTQ1OCA4MTVRNTA5IDgxNSA1NDkuMCA3OTAuNVE1ODkgNzY2IDYxMi4wIDcyMy41UTYzNSA2ODEgNjM1IDYyOFE2MzUgNTc0IDYxMi4wIDUzMS41UTU4OSA0ODkgNTQ5LjAgNDY0LjVRNTA5IDQ0MCA0NTggNDQwUTQwOCA0NDAgMzY3LjUgNDY0LjVRMzI3IDQ4OSAzMDMuNSA1MzEuNVEyODAgNTc0IDI4MCA2MjhRMjgwIDY4MSAzMDMuNSA3MjMuNVEzMjcgNzY2IDM2Ny41IDc5MC41UTQwOCA4MTUgNDU4IDgxNVpNNjgyIDkwMlE2NjAgOTAyIDY0NS41IDg4Ny41UTYzMSA4NzMgNjMxIDg1MVY2OThMNjUwIDU5Mkw3MzMgNjI4Vjg1MVE3MzMgODczIDcxOC41IDg4Ny41UTcwNCA5MDIgNjgyIDkwMloiIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNOTgxIDcwMSA5MTkgNjMzIDEyMjYgMzU5UTEyNDEgMzQ1IDEyNTkuNSAzNDYuMFExMjc4IDM0NyAxMjkxIDM2MlExMzA1IDM3NyAxMzA0LjAgMzk1LjBRMTMwMyA0MTMgMTI4OCA0MjdaTTkzNCA5MDFROTEyIDkwMSA4OTguNSA4ODcuNVE4ODUgODc0IDg4NSA4NTJWMTY5UTg4NSAxNDcgODk4LjUgMTMzLjVROTEyIDEyMCA5MzQgMTIwUTk1NiAxMjAgOTY5LjUgMTMzLjVROTgzIDE0NyA5ODMgMTY5Vjg1MlE5ODMgODc0IDk2OS41IDg4Ny41UTk1NiA5MDEgOTM0IDkwMVpNMTI5MSA4OTZRMTI3NSA5MDkgMTI1NS41IDkwNy41UTEyMzYgOTA2IDEyMjMgODkwTDEwMjAgNjM5TDEwOTAgNTczTDEyOTggODI5UTEzMTEgODQ1IDEzMDkuNSA4NjMuNVExMzA4IDg4MiAxMjkxIDg5NloiIGZpbGw9IiNmZmZmZmYiLz48cGF0aCBkPSJNMTYzMiA5MDVRMTU1OSA5MDUgMTUwMS4wIDg2OC41UTE0NDMgODMyIDE0MDkuNSA3NjkuNVExMzc2IDcwNyAxMzc2IDYyOFExMzc2IDU0OSAxNDEyLjUgNDg2LjBRMTQ0OSA0MjMgMTUxMS41IDM4Ni41UTE1NzQgMzUwIDE2NTIgMzUwUTE3MzAgMzUwIDE3OTIuMCAzODYuNVExODU0IDQyMyAxODkwLjUgNDg2LjBRMTkyNyA1NDkgMTkyNyA2MjhIMTg4OFExODg4IDcwNyAxODU0LjUgNzY5LjVRMTgyMSA4MzIgMTc2My4wIDg2OC41UTE3MDUgOTA1IDE2MzIgOTA1Wk0xNjUyIDgxNVExNzAzIDgxNSAxNzQzLjAgNzkwLjVRMTc4MyA3NjYgMTgwNi4wIDcyMy41UTE4MjkgNjgxIDE4MjkgNjI4UTE4MjkgNTc0IDE4MDYuMCA1MzEuNVExNzgzIDQ4OSAxNzQzLjAgNDY0LjVRMTcwMyA0NDAgMTY1MiA0NDBRMTYwMiA0NDAgMTU2MS41IDQ2NC41UTE1MjEgNDg5IDE0OTcuNSA1MzEuNVExNDc0IDU3NCAxNDc0IDYyOFExNDc0IDY4MSAxNDk3LjUgNzIzLjVRMTUyMSA3NjYgMTU2MS41IDc5MC41UTE2MDIgODE1IDE2NTIgODE1Wk0xODc2IDkwMlExODU0IDkwMiAxODM5LjUgODg3LjVRMTgyNSA4NzMgMTgyNSA4NTFWNjk4TDE4NDQgNTkyTDE5MjcgNjI4Vjg1MVExOTI3IDg3MyAxOTEyLjUgODg3LjVRMTg5OCA5MDIgMTg3NiA5MDJaIiBmaWxsPSIjZmZmZmZmIi8+PHBhdGggZD0iTTIyNjguMCw1OTEuMCBMMjI2OC4wLDg1Mi4wIiBzdHJva2U9InVybCgjYmFyMmQpIiBzdHJva2Utd2lkdGg9Ijk4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIyMTI1LjAiIHk9IjYzNy4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMjA4IiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIyZCkiLz48cmVjdCB4PSIyMzU1LjAiIHk9IjYzNy4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMjA4IiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIyZCkiLz48cmVjdCB4PSIyMDMxLjAiIHk9IjY4NS4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMTEyIiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIyZCkiLz48cmVjdCB4PSIyNDQ5LjAiIHk9IjY4NS4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMTEyIiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIyZCkiLz48cGF0aCBkPSJNMjAwNi4wLDE2OS4wIEwyMjY4LjAsNTkxLjAgTDI1MzAuMCwxNjkuMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2N1cDJkKSIgc3Ryb2tlLXdpZHRoPSI5OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTI4NjUuMCA5MDVRMjc5Mi4wIDkwNSAyNzM0LjAgODY4LjVRMjY3Ni4wIDgzMiAyNjQyLjUgNzY5LjVRMjYwOS4wIDcwNyAyNjA5LjAgNjI4UTI2MDkuMCA1NDkgMjY0NS41IDQ4Ni4wUTI2ODIuMCA0MjMgMjc0NC41IDM4Ni41UTI4MDcuMCAzNTAgMjg4NS4wIDM1MFEyOTYzLjAgMzUwIDMwMjUuMCAzODYuNVEzMDg3LjAgNDIzIDMxMjMuNSA0ODYuMFEzMTYwLjAgNTQ5IDMxNjAuMCA2MjhIMzEyMS4wUTMxMjEuMCA3MDcgMzA4Ny41IDc2OS41UTMwNTQuMCA4MzIgMjk5Ni4wIDg2OC41UTI5MzguMCA5MDUgMjg2NS4wIDkwNVpNMjg4NS4wIDgxNVEyOTM2LjAgODE1IDI5NzYuMCA3OTAuNVEzMDE2LjAgNzY2IDMwMzkuMCA3MjMuNVEzMDYyLjAgNjgxIDMwNjIuMCA2MjhRMzA2Mi4wIDU3NCAzMDM5LjAgNTMxLjVRMzAxNi4wIDQ4OSAyOTc2LjAgNDY0LjVRMjkzNi4wIDQ0MCAyODg1LjAgNDQwUTI4MzUuMCA0NDAgMjc5NC41IDQ2NC41UTI3NTQuMCA0ODkgMjczMC41IDUzMS41UTI3MDcuMCA1NzQgMjcwNy4wIDYyOFEyNzA3LjAgNjgxIDI3MzAuNSA3MjMuNVEyNzU0LjAgNzY2IDI3OTQuNSA3OTAuNVEyODM1LjAgODE1IDI4ODUuMCA4MTVaTTMxMDkuMCA5MDJRMzA4Ny4wIDkwMiAzMDcyLjUgODg3LjVRMzA1OC4wIDg3MyAzMDU4LjAgODUxVjY5OEwzMDc3LjAgNTkyTDMxNjAuMCA2MjhWODUxUTMxNjAuMCA4NzMgMzE0NS41IDg4Ny41UTMxMzEuMCA5MDIgMzEwOS4wIDkwMloiIGZpbGw9IiNmZmZmZmYiLz48L2c+PC9zdmc+" alt="akaYa">
+    <div class="t">Bubble <span>· motion system</span></div>
+    <div class="hint">Tap the bubble to make it flinch · click the stage to move it · it watches your pointer</div>
+  </header>
+
+  <aside id="controls">
+    <h3>App states</h3><div class="pills" id="statePills"></div>
+    <h3>Accessories</h3><div class="pills" id="accPills"></div>
+    <h3>Actions</h3>
+    <div class="pills">
+      <button class="pill act wide" id="btnMorph">✦ Floating button ⇄ panel</button>
+      <button class="pill" id="btnTour">▶ Play tour</button>
+      <button class="pill" id="btnMic">🎙 Use my mic</button>
+      <button class="pill wide on" id="btnSound" style="--c:#0dabf4">🔊 Sound on <span style="opacity:.6;font-weight:600">(after your first click)</span></button>
+    </div>
+    <div id="api"></div>
+  </aside>
+
+  <main id="stage">
+    <canvas id="cv"></canvas>
+    <div id="stagehint">spring physics · squash &amp; stretch · fake 3D lighting · superellipse n = 2.2</div>
+    <div id="label"><div class="name"><i></i><span>Idle</span></div><div class="note">breathes · blinks · follows your pointer</div></div>
+  </main>
+
+  <section id="phoneWrap">
+    <div id="phone"><div id="screen">
+      <div class="sb"><span>10:30</span><span class="cam"></span><span>▂▄▆ 93%</span></div>
+      <div class="chathead"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1b1f2e" stroke-width="2.5" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>
+        <div class="av">R</div><div><b>Rahul</b><small>online</small></div></div>
+      <div class="msgs" id="msgs">
+        <div class="day">Today</div>
+        <div class="m in">Hey Priya! Can you send the files for today's meeting? 📁<small>10:28 AM</small></div>
+      </div>
+      <div class="inputbar"><div class="f" id="field">Message</div>
+        <div class="send" id="sendBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M3 11.5 21 3l-6.5 18-3-7.5z"/></svg></div></div>
+      <div id="morph">
+        <svg id="spark" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5z"/><path d="M19 15.5c.25 1.9 1.2 2.85 3.1 3.1-1.9.25-2.85 1.2-3.1 3.1-.25-1.9-1.2-2.85-3.1-3.1 1.9-.25 2.85-1.2 3.1-3.1z"/></svg>
+        <div id="pc">
+          <div class="ph"><div class="drag"><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="avslot" id="avslot"></div>
+            <div class="akpill"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMzQyIDEwMjEiIHdpZHRoPSIzMzQyIiBoZWlnaHQ9IjEwMjEiPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iY3VwMmwiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4MT0iMTk1Ny4wIiB5MT0iMCIgeDI9IjI1NzkuMCIgeTI9IjAiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzAyNjlmOCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc2MjVlZiIvPjwvbGluZWFyR3JhZGllbnQ+PGxpbmVhckdyYWRpZW50IGlkPSJiYXIybCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiIHgxPSIwIiB5MT0iNTkxLjAiIHgyPSIwIiB5Mj0iOTAxLjAiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzNjNDdmNCIvPjxzdG9wIG9mZnNldD0iMC41IiBzdG9wLWNvbG9yPSIjMGRhYmY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjMDhkYTczIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PGc+PHBhdGggZD0iTTQzOCA5MDVRMzY1IDkwNSAzMDcuMCA4NjguNVEyNDkgODMyIDIxNS41IDc2OS41UTE4MiA3MDcgMTgyIDYyOFExODIgNTQ5IDIxOC41IDQ4Ni4wUTI1NSA0MjMgMzE3LjUgMzg2LjVRMzgwIDM1MCA0NTggMzUwUTUzNiAzNTAgNTk4LjAgMzg2LjVRNjYwIDQyMyA2OTYuNSA0ODYuMFE3MzMgNTQ5IDczMyA2MjhINjk0UTY5NCA3MDcgNjYwLjUgNzY5LjVRNjI3IDgzMiA1NjkuMCA4NjguNVE1MTEgOTA1IDQzOCA5MDVaTTQ1OCA4MTVRNTA5IDgxNSA1NDkuMCA3OTAuNVE1ODkgNzY2IDYxMi4wIDcyMy41UTYzNSA2ODEgNjM1IDYyOFE2MzUgNTc0IDYxMi4wIDUzMS41UTU4OSA0ODkgNTQ5LjAgNDY0LjVRNTA5IDQ0MCA0NTggNDQwUTQwOCA0NDAgMzY3LjUgNDY0LjVRMzI3IDQ4OSAzMDMuNSA1MzEuNVEyODAgNTc0IDI4MCA2MjhRMjgwIDY4MSAzMDMuNSA3MjMuNVEzMjcgNzY2IDM2Ny41IDc5MC41UTQwOCA4MTUgNDU4IDgxNVpNNjgyIDkwMlE2NjAgOTAyIDY0NS41IDg4Ny41UTYzMSA4NzMgNjMxIDg1MVY2OThMNjUwIDU5Mkw3MzMgNjI4Vjg1MVE3MzMgODczIDcxOC41IDg4Ny41UTcwNCA5MDIgNjgyIDkwMloiIGZpbGw9IiMxMTExMTEiLz48cGF0aCBkPSJNOTgxIDcwMSA5MTkgNjMzIDEyMjYgMzU5UTEyNDEgMzQ1IDEyNTkuNSAzNDYuMFExMjc4IDM0NyAxMjkxIDM2MlExMzA1IDM3NyAxMzA0LjAgMzk1LjBRMTMwMyA0MTMgMTI4OCA0MjdaTTkzNCA5MDFROTEyIDkwMSA4OTguNSA4ODcuNVE4ODUgODc0IDg4NSA4NTJWMTY5UTg4NSAxNDcgODk4LjUgMTMzLjVROTEyIDEyMCA5MzQgMTIwUTk1NiAxMjAgOTY5LjUgMTMzLjVROTgzIDE0NyA5ODMgMTY5Vjg1MlE5ODMgODc0IDk2OS41IDg4Ny41UTk1NiA5MDEgOTM0IDkwMVpNMTI5MSA4OTZRMTI3NSA5MDkgMTI1NS41IDkwNy41UTEyMzYgOTA2IDEyMjMgODkwTDEwMjAgNjM5TDEwOTAgNTczTDEyOTggODI5UTEzMTEgODQ1IDEzMDkuNSA4NjMuNVExMzA4IDg4MiAxMjkxIDg5NloiIGZpbGw9IiMxMTExMTEiLz48cGF0aCBkPSJNMTYzMiA5MDVRMTU1OSA5MDUgMTUwMS4wIDg2OC41UTE0NDMgODMyIDE0MDkuNSA3NjkuNVExMzc2IDcwNyAxMzc2IDYyOFExMzc2IDU0OSAxNDEyLjUgNDg2LjBRMTQ0OSA0MjMgMTUxMS41IDM4Ni41UTE1NzQgMzUwIDE2NTIgMzUwUTE3MzAgMzUwIDE3OTIuMCAzODYuNVExODU0IDQyMyAxODkwLjUgNDg2LjBRMTkyNyA1NDkgMTkyNyA2MjhIMTg4OFExODg4IDcwNyAxODU0LjUgNzY5LjVRMTgyMSA4MzIgMTc2My4wIDg2OC41UTE3MDUgOTA1IDE2MzIgOTA1Wk0xNjUyIDgxNVExNzAzIDgxNSAxNzQzLjAgNzkwLjVRMTc4MyA3NjYgMTgwNi4wIDcyMy41UTE4MjkgNjgxIDE4MjkgNjI4UTE4MjkgNTc0IDE4MDYuMCA1MzEuNVExNzgzIDQ4OSAxNzQzLjAgNDY0LjVRMTcwMyA0NDAgMTY1MiA0NDBRMTYwMiA0NDAgMTU2MS41IDQ2NC41UTE1MjEgNDg5IDE0OTcuNSA1MzEuNVExNDc0IDU3NCAxNDc0IDYyOFExNDc0IDY4MSAxNDk3LjUgNzIzLjVRMTUyMSA3NjYgMTU2MS41IDc5MC41UTE2MDIgODE1IDE2NTIgODE1Wk0xODc2IDkwMlExODU0IDkwMiAxODM5LjUgODg3LjVRMTgyNSA4NzMgMTgyNSA4NTFWNjk4TDE4NDQgNTkyTDE5MjcgNjI4Vjg1MVExOTI3IDg3MyAxOTEyLjUgODg3LjVRMTg5OCA5MDIgMTg3NiA5MDJaIiBmaWxsPSIjMTExMTExIi8+PHBhdGggZD0iTTIyNjguMCw1OTEuMCBMMjI2OC4wLDg1Mi4wIiBzdHJva2U9InVybCgjYmFyMmwpIiBzdHJva2Utd2lkdGg9Ijk4IiBzdHJva2UtbGluZWNhcD0icm91bmQiIGZpbGw9Im5vbmUiLz48cmVjdCB4PSIyMTI1LjAiIHk9IjYzNy4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMjA4IiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIybCkiLz48cmVjdCB4PSIyMzU1LjAiIHk9IjYzNy4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMjA4IiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIybCkiLz48cmVjdCB4PSIyMDMxLjAiIHk9IjY4NS4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMTEyIiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIybCkiLz48cmVjdCB4PSIyNDQ5LjAiIHk9IjY4NS4wIiB3aWR0aD0iNTYiIGhlaWdodD0iMTEyIiByeD0iMjguMCIgZmlsbD0idXJsKCNiYXIybCkiLz48cGF0aCBkPSJNMjAwNi4wLDE2OS4wIEwyMjY4LjAsNTkxLjAgTDI1MzAuMCwxNjkuMCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJ1cmwoI2N1cDJsKSIgc3Ryb2tlLXdpZHRoPSI5OCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTI4NjUuMCA5MDVRMjc5Mi4wIDkwNSAyNzM0LjAgODY4LjVRMjY3Ni4wIDgzMiAyNjQyLjUgNzY5LjVRMjYwOS4wIDcwNyAyNjA5LjAgNjI4UTI2MDkuMCA1NDkgMjY0NS41IDQ4Ni4wUTI2ODIuMCA0MjMgMjc0NC41IDM4Ni41UTI4MDcuMCAzNTAgMjg4NS4wIDM1MFEyOTYzLjAgMzUwIDMwMjUuMCAzODYuNVEzMDg3LjAgNDIzIDMxMjMuNSA0ODYuMFEzMTYwLjAgNTQ5IDMxNjAuMCA2MjhIMzEyMS4wUTMxMjEuMCA3MDcgMzA4Ny41IDc2OS41UTMwNTQuMCA4MzIgMjk5Ni4wIDg2OC41UTI5MzguMCA5MDUgMjg2NS4wIDkwNVpNMjg4NS4wIDgxNVEyOTM2LjAgODE1IDI5NzYuMCA3OTAuNVEzMDE2LjAgNzY2IDMwMzkuMCA3MjMuNVEzMDYyLjAgNjgxIDMwNjIuMCA2MjhRMzA2Mi4wIDU3NCAzMDM5LjAgNTMxLjVRMzAxNi4wIDQ4OSAyOTc2LjAgNDY0LjVRMjkzNi4wIDQ0MCAyODg1LjAgNDQwUTI4MzUuMCA0NDAgMjc5NC41IDQ2NC41UTI3NTQuMCA0ODkgMjczMC41IDUzMS41UTI3MDcuMCA1NzQgMjcwNy4wIDYyOFEyNzA3LjAgNjgxIDI3MzAuNSA3MjMuNVEyNzU0LjAgNzY2IDI3OTQuNSA3OTAuNVEyODM1LjAgODE1IDI4ODUuMCA4MTVaTTMxMDkuMCA5MDJRMzA4Ny4wIDkwMiAzMDcyLjUgODg3LjVRMzA1OC4wIDg3MyAzMDU4LjAgODUxVjY5OEwzMDc3LjAgNTkyTDMxNjAuMCA2MjhWODUxUTMxNjAuMCA4NzMgMzE0NS41IDg4Ny41UTMxMzEuMCA5MDIgMzEwOS4wIDkwMloiIGZpbGw9IiMxMTExMTEiLz48L2c+PC9zdmc+" alt="akaYa"></div>
+            <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M9 3h6l-1 6 3 3H7l3-3zM12 12v9"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>
+              <svg id="pclose" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></div></div>
+          <div class="tabs"><div class="dd">🌐 Hindi ▾</div><div class="tab"><b>अA</b>Hinglish</div><div class="tab on"><b>A</b>English</div><div class="tab"><b>+</b>More</div></div>
+          <div class="tools"><div class="chev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d7dcf7" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+            <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5c1.8 2 5.2 2 7 0M9 9.5h.01M15 9.5h.01"/></svg>Tone</div>
+            <div class="tool on"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>Purpose</div>
+            <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"/></svg>Read Screen</div>
+            <div class="tool"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>Grammar</div></div>
+          <div class="card" id="card">
+            <div class="top"><span class="lbl" id="clbl">Ready</span>
+              <div class="btns"><div class="btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy</div>
+                <div class="btn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6"/></svg>Read</div>
+                <div class="btn hi" id="insertBtn"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><path d="M20 5v7a3 3 0 0 1-3 3H6M10 11l-4 4 4 4"/></svg>Insert</div></div></div>
+            <div class="said" id="csaid"></div>
+            <div class="txt" id="ctxt"></div>
+            <div class="meter" id="meter"></div><div class="langs" id="langs"><i>हिन्दी</i><i>English</i><i>日本語</i><i>தமிழ்</i><i>العربية</i><i>Español</i><i>99+</i></div>
+          </div>
+        </div>
+      </div>
+      <canvas id="mini"></canvas>
+    </div></div>
+    <div id="phoneCap">The orange sparkle button morphs into the panel</div>
+  </section>
+
+  <svg id="cursor" viewBox="0 0 24 24"><path d="M4 2.5v17.2l4.6-4.3 3 6.6 3.1-1.4-3-6.4 6.3-.3z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg>
+</div>
+
+<script>
+/*!
+ * akaya-bubble.js: the Akaya iridescent bubble mascot as a 2D canvas character.
+ * No dependencies and no build step. Works as a classic <script> (window.AkayaBubbleKit) or via CommonJS require.
+ *
+ *   const bubble = new AkayaBubbleKit.AkayaBubble(canvas, { size: 0.28 });
+ *   bubble.setState('listening');   bubble.setLevel(0.6);   bubble.setAccessory('santa');
+ *
+ * Techniques: superellipse body |x/rx|^n + |y/ry|^n = 1, fake 3D lighting (body gradient, shading,
+ * fresnel rim, bounce light, sharp top-left specular, drop shadow, mood glow), under-damped springs
+ * for every move (anticipation → travel → overshoot → settle), squash & stretch, breathing,
+ * blinking and eyes on a sphere that follow the pointer.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.AkayaBubbleKit = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ tokens */
+  const BRAND = { blue: '#0269f8', violet: '#7625ef', cyan: '#0dabf4', green: '#08da73', orange: '#E8743B', navy: '#121733' };
+  // Our construction: n = 2.2 (a soft bubble, rounder than a squircle), height = 0.94 × width.
+  const SHAPE = {
+    n: 2.2, ryRatio: 0.94,
+    eye: { yaw: 0.33, pitch: 0.0, w: 0.19, h: 0.23 },          // eyes on a sphere (radians, ×rx)
+    specular: { x: -0.42, y: -0.52, rx: 0.26, ry: 0.11, rot: -0.6 }, // ×rx / ×ry
+    badgeAngle: -Math.PI / 4, badgeR: 0.25,                        // on the rim at −45°
+    glowR: 1.9, floor: 1.22,                                       // ×rx, ×ry
+  };
+  // Spring presets (unit mass): k = stiffness, z = damping ratio ζ (<1 = under-damped, overshoots)
+  const SPRINGS = {
+    travel: { k: 170, z: 0.42 }, squash: { k: 380, z: 0.30 }, tilt: { k: 200, z: 0.36 },
+    gaze: { k: 240, z: 0.62 }, drop: { k: 260, z: 0.38 }, badge: { k: 500, z: 0.35 },
+    shake: { k: 900, z: 0.12 }, glow: { k: 60, z: 1.0 }, level: { k: 300, z: 0.8 },
+  };
+
+  /* ------------------------------------------------------------------ states */
+  const STATES = {
+    idle:        { label: 'Idle', note: 'breathes · blinks · follows your pointer', glow: BRAND.violet, glowAmt: 0.55, eyes: 'open', badge: 'presence', breath: [0.018, 4.2], float: 0.04, gaze: 'pointer' },
+    listening:   { label: 'Listening', note: 'voice input · reacts to mic level', glow: BRAND.cyan, glowAmt: 0.85, eyes: 'open', eyeScale: 1.14, badge: 'mic', breath: [0.008, 2.2], float: 0.025, gaze: 'pointer', pose: [0, -0.12, 0], rings: true },
+    thinking:    { label: 'Thinking', note: 'eyes up-right · typing dots', glow: '#8b5cf6', glowAmt: 0.7, eyes: 'open', lid: [0.22, 0], badge: 'dots', breath: [0.014, 3.2], float: 0.035, gaze: 'upRight', pose: [-0.07, -0.12, -0.05], sway: true },
+    reply:       { label: 'Reply ready', note: 'draft written · tap Send', glow: BRAND.blue, glowAmt: 0.8, eyes: 'happy', badge: 'send', blush: 0.55, breath: [0.016, 3.6], float: 0.035, gaze: 'downRight', pose: [0.08, 0, 0.04], enter: 'hop1' },
+    reminder:    { label: 'Reminder', note: 'bell drops in · bounce', glow: BRAND.orange, glowAmt: 0.85, eyes: 'open', eyeScale: 1.1, badge: 'bell', breath: [0.014, 3.0], float: 0.025, gaze: 'pointer', enter: 'bounce', badgeDrop: true },
+    offline:     { label: 'Offline', note: 'on-device mode · calm & dim', glow: '#4a6fa8', glowAmt: 0.32, eyes: 'open', lid: [0.34, 0], badge: 'offline', dim: 0.32, breath: [0.012, 6.0], float: 0.018, gaze: 'soft', speed: 0.6 },
+    translating: { label: 'Translating', note: '99+ languages · eyes scan', glow: BRAND.cyan, glow2: BRAND.green, glowAmt: 0.8, eyes: 'open', badge: 'lang', breath: [0.014, 3.4], float: 0.035, gaze: 'scan', glyphs: true },
+    error:       { label: 'Error', note: 'worried eyes · quick shake', glow: '#ff4d6a', glowAmt: 0.75, eyes: 'open', eyeScale: 0.88, lid: [0.12, 0.62], badge: 'alert', breath: [0.010, 2.6], float: 0.015, gaze: 'center', enter: 'shake' },
+    success:     { label: 'Success', note: 'jump · sparkles', glow: BRAND.green, glowAmt: 0.85, eyes: 'happy', badge: 'check', blush: 0.65, breath: [0.016, 3.4], float: 0.035, gaze: 'center', enter: 'jump', sparkles: true },
+    sleeping:    { label: 'Sleeping', note: 'eyes closed · zzz · deep breath', glow: '#3a3fb0', glowAmt: 0.28, eyes: 'closed', badge: 'moon', dim: 0.38, breath: [0.032, 5.6], float: 0.01, gaze: 'center', pose: [0, 0.15, 0], zzz: true, speed: 0.55 },
+  };
+  const STATE_ORDER = ['idle', 'listening', 'thinking', 'reply', 'reminder', 'offline', 'translating', 'error', 'success', 'sleeping'];
+  const ALIASES = { replyReady: 'reply', 'reply-ready': 'reply', reply_ready: 'reply', sleep: 'sleeping', translate: 'translating' };
+  const ACCESSORIES = {
+    diya: { label: 'Diwali diya' }, holi: { label: 'Holi colours' },
+    santa: { label: 'Santa hat' }, gradcap: { label: 'Graduation cap' },
+  };
+  const GLYPHS = ['A', 'अ', 'あ', 'ع', 'த', 'Ñ', '文', 'ক'];
+  const GREETINGS = ['नमस्ते', 'Hola', 'Bonjour', 'こんにちは', 'مرحبا', 'வணக்கம்', 'Hello', 'Ciao'];
+  const FONT_STACK = '"Manrope","Noto Sans","Noto Sans Devanagari","Noto Sans CJK JP","Noto Sans JP","Noto Sans Arabic","Noto Sans Tamil","Noto Sans Bengali",sans-serif';
+
+  /* ------------------------------------------------------------------ helpers */
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  function hexToRgb(h) { h = h.replace('#', ''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
+  const rgba = (c, a) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  /** Damped harmonic spring, unit mass. a = −k(x − target) − c·v, c = 2ζ√k. */
+  class Spring {
+    constructor(v = 0, { k = 200, z = 0.45 } = {}) { this.v = v; this.target = v; this.vel = 0; this.k = k; this.z = z; }
+    set(t) { this.target = t; return this; }
+    snap(v) { this.v = this.target = v; this.vel = 0; return this; }
+    kick(dv) { this.vel += dv; return this; }
+    step(dt) { const c = 2 * this.z * Math.sqrt(this.k); const a = -this.k * (this.v - this.target) - c * this.vel; this.vel += a * dt; this.v += this.vel * dt; }
+    get settled() { return Math.abs(this.vel) < 1e-3 && Math.abs(this.v - this.target) < 1e-3; }
+  }
+
+  /** Superellipse point at angle th: |x/rx|^n + |y/ry|^n = 1 */
+  function superPoint(th, rx, ry, n) {
+    const c = Math.cos(th), s = Math.sin(th), e = 2 / n;
+    return [rx * Math.sign(c) * Math.pow(Math.abs(c), e), ry * Math.sign(s) * Math.pow(Math.abs(s), e)];
+  }
+  function superPath(ctx, rx, ry, n, wob = 0, phase = 0, N = 120) {
+    ctx.beginPath();
+    for (let i = 0; i <= N; i++) {
+      const th = (i / N) * Math.PI * 2;
+      const [x, y] = superPoint(th, rx, ry, n);
+      const k = 1 + wob * Math.sin(th * 3 + phase) + wob * 0.5 * Math.sin(th * 5 - phase * 1.3);
+      if (i === 0) ctx.moveTo(x * k, y * k); else ctx.lineTo(x * k, y * k);
+    }
+    ctx.closePath();
+  }
+  function star4(ctx, s) { ctx.beginPath(); ctx.moveTo(0, -s); ctx.quadraticCurveTo(0, 0, s, 0); ctx.quadraticCurveTo(0, 0, 0, s); ctx.quadraticCurveTo(0, 0, -s, 0); ctx.quadraticCurveTo(0, 0, 0, -s); ctx.closePath(); }
+  function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+  /* ------------------------------------------------------------------ the bubble */
+  class AkayaBubble {
+    /**
+     * @param {HTMLCanvasElement} canvas
+     * @param {object} opts  size (rx as a fraction of min(w,h)), n, ryRatio, center [fx,fy], autoStart,
+     *                       glow, shadow, glowBlend, interactive, seed, width/height (CSS px override)
+     */
+    constructor(canvas, opts = {}) {
+      this.canvas = canvas; this.ctx = canvas.getContext('2d');
+      this.o = Object.assign({ n: SHAPE.n, ryRatio: SHAPE.ryRatio, size: 0.28, center: [0.5, 0.5], autoStart: true,
+        glow: true, shadow: true, glowBlend: 'screen', interactive: true, seed: 7, dpr: (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1) }, opts);
+      this.rand = mulberry32(this.o.seed);
+      this.t = 0; this._timers = []; this._tid = 1; this._ls = {};
+      const S = SPRINGS;
+      this.px = new Spring(0, S.travel); this.py = new Spring(0, S.travel); this.rot = new Spring(0, S.tilt);
+      this.sq = new Spring(0, S.squash); this.shake = new Spring(0, S.shake);
+      this.gx = new Spring(0, S.gaze); this.gy = new Spring(0, S.gaze);
+      this.badgeS = new Spring(0, S.badge); this.badgeY = new Spring(0, S.drop); this.bellRot = new Spring(0, { k: 120, z: 0.14 });
+      this.level = new Spring(0, S.level); this.levelIn = 0;
+      this.glowC = [0, 1, 2].map(() => new Spring(0, S.glow)); this.glowA = new Spring(0.5, S.glow); this.dim = new Spring(0, S.glow);
+      this.eyeScale = new Spring(1, { k: 260, z: 0.45 }); this.lidY = new Spring(0, { k: 200, z: 0.75 }); this.lidA = new Spring(0, { k: 200, z: 0.75 });
+      this.blush = new Spring(0, S.glow);
+      this.accY = new Spring(0, S.drop); this.accTilt = new Spring(0, { k: 90, z: 0.25 }); this.tassel = new Spring(0, { k: 60, z: 0.18 });
+      this.holiA = new Spring(0, { k: 80, z: 0.9 }); this.accOld = null; this.acc = null;
+      this.eyeMode = 'open'; this.blinkT = -1; this.nextBlink = 1.2; this.squeezeUntil = -1;
+      this.saccX = 0; this.saccY = 0; this.nextSacc = 0.5; this.nextBell = 0; this.nextEmit = 0;
+      this.hopping = false; this.hopY = 0; this.hopV = 0; this.hopBounces = 0;
+      this.userOff = [0, 0]; this.particles = []; this.pointer = null; this.state = null; this._cx = 0; this._cy = 0;
+      this.resize();
+      this.setState(opts.state || 'idle', { instant: true });
+      if (opts.accessory) this.setAccessory(opts.accessory, { instant: true });
+      if (this.o.interactive) this._bindPointer();
+      if (this.o.autoStart) this.start();
+    }
+
+    /* ---------- events & clock ---------- */
+    on(ev, fn) { (this._ls[ev] = this._ls[ev] || []).push(fn); return () => this.off(ev, fn); }
+    off(ev, fn) { this._ls[ev] = (this._ls[ev] || []).filter(f => f !== fn); }
+    emit(ev, data) { (this._ls[ev] || []).forEach(f => f(data)); }
+    /** Run fn after `sec` seconds of bubble time (deterministic, pauses with the bubble). Returns an id. */
+    after(sec, fn) { const id = this._tid++; this._timers.push({ id, at: this.t + sec, fn }); return id; }
+    cancel(id) { this._timers = this._timers.filter(x => x.id !== id); }
+    /** Scheduler adapter for the state machine: {set(fn, ms), clear(id)} */
+    get scheduler() { return { set: (fn, ms) => this.after(ms / 1000, fn), clear: id => this.cancel(id) }; }
+    start() { if (this._raf) return; let last = performance.now(); const loop = (now) => { this.tick(Math.min(0.05, (now - last) / 1000)); last = now; this._raf = requestAnimationFrame(loop); }; this._raf = requestAnimationFrame(loop); }
+    stop() { cancelAnimationFrame(this._raf); this._raf = null; }
+
+    resize() {
+      const r = this.canvas.getBoundingClientRect();
+      this.w = this.o.width || r.width || this.canvas.width; this.h = this.o.height || r.height || this.canvas.height;
+      const d = this.o.dpr; this.canvas.width = Math.round(this.w * d); this.canvas.height = Math.round(this.h * d);
+      this.rx = Math.min(this.w, this.h) * this.o.size; this.ry = this.rx * this.o.ryRatio;
+      this.hx = this.w * this.o.center[0]; this.hy = this.h * this.o.center[1]; this._cx = this.hx; this._cy = this.hy;
+    }
+
+    /* ---------- public API ---------- */
+    get states() { return STATE_ORDER.slice(); }
+    setState(name, { instant = false, force = false } = {}) {
+      name = ALIASES[name] || name;
+      const st = STATES[name]; if (!st) throw new Error('Unknown Akaya state: ' + name);
+      if (name === this.state && !force) return this;
+      const prev = this.state; this.state = name; this.enterT = this.t;
+      const g = hexToRgb(st.glow);
+      this.glowC.forEach((s, i) => instant ? s.snap(g[i]) : s.set(g[i]));
+      const setS = (s, v) => instant ? s.snap(v) : s.set(v);
+      setS(this.glowA, st.glowAmt); setS(this.dim, st.dim || 0); setS(this.eyeScale, st.eyeScale || 1);
+      setS(this.lidY, st.lid ? st.lid[0] : 0); setS(this.lidA, st.lid ? st.lid[1] : 0); setS(this.blush, st.blush || 0);
+      this.badge = st.badge;
+      if (instant) { this.eyeMode = st.eyes; this.badgeS.snap(1); this.badgeY.snap(0); this._retarget(false, true); }
+      else {
+        this.blink(() => { this.eyeMode = st.eyes; }, 0.3);           // blink-swap: close, swap eyes, open
+        this.badgeS.snap(0.0).set(1);                                  // badge pops in with overshoot
+        if (st.badgeDrop) { this.badgeY.snap(-2.4).set(0); this._badgeLanded = false; }
+        this._retarget(true);
+        switch (st.enter) {
+          case 'hop1': this.hop(3.0, 0); break;
+          case 'bounce': this.after(0.32, () => this.hop(4.0, 2)); break;
+          case 'jump': this.hop(5.2, 1); break;
+          case 'shake': this.after(0.06, () => { this.shake.kick(8); this.sq.kick(2); }); this.after(0.7, () => this.shake.kick(-4)); break;
+        }
+        if (st.sparkles) for (let i = 0; i < 10; i++) this.after(0.12 + i * 0.03, () => this._emitSpark(true));
+      }
+      this.nextEmit = this.t + 0.2;
+      this.emit('statechange', { state: name, prev });
+      return this;
+    }
+    /** Mic level 0..1 (feed analyser RMS). Drives listening rings, glow and body pulse. */
+    setLevel(v) { this.levelIn = clamp(v, 0, 1); return this; }
+    /** Eyes follow this point (canvas CSS px). null = idle glances. */
+    lookAt(x, y) { this.pointer = (x == null) ? null : { x, y }; return this; }
+    /** Travel to an offset from home (in rx units) with anticipation → travel → overshoot → settle. */
+    moveTo(ox, oy, { anticipate = true } = {}) { this.userOff = [ox, oy]; this._retarget(anticipate); return this; }
+    /** Travel so the bubble centre ends at canvas point (x,y). */
+    moveToPoint(x, y, o) { const st = STATES[this.state], p = st.pose || [0, 0]; return this.moveTo((x - this.hx) / this.rx - p[0], (y - this.hy) / this.rx - p[1], o); }
+    hitTest(x, y) { const dx = (x - this._cx) / (this.rx * 1.05), dy = (y - this._cy) / (this.ry * 1.05); return Math.pow(Math.abs(dx), this.o.n) + Math.pow(Math.abs(dy), this.o.n) <= 1; }
+    /** Tap at canvas point: flinch away from it (squash, squeeze eyes, spring back). */
+    tapAt(x, y) {
+      let dx = (this._cx - x) / this.rx, dy = (this._cy - y) / this.rx; const d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+      this.px.kick(dx * 4.2); this.py.kick(dy * 3.2 - 0.6); this.rot.kick(dx * 5.5); this.sq.kick(5);
+      this.squeezeUntil = this.t + 0.36;
+      this.emit('tap', { x, y }); return this;
+    }
+    /** Put on / swap an accessory: 'diya' | 'holi' | 'santa' | 'gradcap' | null. It drops in with a bounce. */
+    setAccessory(type, { instant = false } = {}) {
+      if (type && !ACCESSORIES[type]) throw new Error('Unknown accessory: ' + type);
+      if (this.acc && this.acc.type === type) return this;
+      if (this.acc && !instant) this.accOld = { type: this.acc.type, y: new Spring(0, { k: 120, z: 0.9 }).set(-3), a: 1, holi: this.holiA.v };
+      this.acc = type ? { type, landed: instant } : null;
+      this.holiA.snap(instant && type === 'holi' ? 1 : 0); if (type !== 'holi') this.holiA.set(0);
+      if (type) { if (instant) this.accY.snap(0); else this.accY.snap(-2.8).set(0); this.accTilt.snap(0); }
+      this.emit('accessory', { accessory: type }); return this;
+    }
+    blink(swap, dur = 0.2) { this.blinkT = 0; this.blinkDur = dur; this._swap = swap || null; }
+    hop(v0 = 4, bounces = 0) {
+      this.sq.kick(3.2);                                   // anticipation: crouch
+      this.after(0.11, () => { this.hopping = true; this.hopV = -v0; this.hopBounces = bounces; this.sq.kick(-4.5); });
+    }
+
+    /* ---------- internals ---------- */
+    _retarget(anticipate, instant) {
+      const st = STATES[this.state], p = st.pose || [0, 0, 0];
+      const tx = this.userOff[0] + p[0], ty = this.userOff[1] + p[1]; this.baseRot = p[2] || 0;
+      if (instant) { this.px.snap(tx); this.py.snap(ty); this.rot.snap(this.baseRot); return; }
+      const dx = tx - this.px.target, dy = ty - this.py.target, d = Math.hypot(dx, dy);
+      if (!anticipate || d < 0.04) { this.px.set(tx); this.py.set(ty); return; }
+      const a = Math.min(0.12, d * 0.18);
+      this.px.set(this.px.v - dx / d * a); this.py.set(this.py.v - dy / d * a);   // wind up, opposite way
+      this.sq.kick(2.4);
+      clearTimeout(this._antT); this.cancel(this._antId);
+      this._antId = this.after(0.12, () => { this.px.set(tx); this.py.set(ty); this.sq.kick(-2.8); });
+    }
+    _bindPointer() {
+      const el = this.canvas;
+      const pos = e => { const r = el.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+      window.addEventListener('pointermove', e => { const [x, y] = pos(e); this.lookAt(x, y); });
+      el.addEventListener('pointerdown', e => { const [x, y] = pos(e); if (this.hitTest(x, y)) this.tapAt(x, y); else this.emit('stageclick', { x, y }); });
+    }
+    _emitSpark(burst) {
+      const a = this.rand() * Math.PI * 2, r = this.rx * (burst ? 1.0 : 1.05 + this.rand() * 0.4);
+      const sp = burst ? this.rx * (1.4 + this.rand() * 1.2) : this.rx * 0.25;
+      const cols = ['#ffffff', '#b9ffdf', BRAND.green, '#9be7ff', '#ffe27a'];
+      this.particles.push({ type: 'spark', x: this._cx + Math.cos(a) * r * 0.8, y: this._cy + Math.sin(a) * r * 0.75, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - this.rx * 0.2, drag: 2.2, g: 0,
+        life: 0, max: 0.9 + this.rand() * 0.5, size: this.rx * (0.07 + this.rand() * 0.07), color: cols[(this.rand() * cols.length) | 0], rot: this.rand() * 3, vr: (this.rand() - 0.5) * 6 });
+    }
+    _emit(st) {
+      const R = this.rx, rnd = this.rand;
+      if (st.zzz) { this.particles.push({ type: 'text', text: 'z', font: `700 ${R * (0.2 + rnd() * 0.12)}px Comfortaa, ${FONT_STACK}`, color: '#c9d0ff', x: this._cx + R * 0.55, y: this._cy - R * 0.55, vx: R * 0.28, vy: -R * 0.42, drag: 0, g: 0, wob: R * 0.12, life: 0, max: 2.4, rot: -0.2, vr: 0.15 }); return 1.0; }
+      if (st.glyphs) { const side = rnd() < 0.5 ? -1 : 1; const word = rnd() < 0.5 ? GREETINGS[(rnd() * GREETINGS.length) | 0] : GLYPHS[(rnd() * GLYPHS.length) | 0];
+        this.particles.push({ type: 'text', text: word, font: `700 ${Math.max(11, R * 0.17)}px ${FONT_STACK}`, color: 'rgba(235,250,255,1)', x: this._cx + side * R * 0.9, y: this._cy + R * (rnd() * 0.6 - 0.4), vx: side * R * 0.55, vy: -R * 0.25, drag: 0.4, g: 0, life: 0, max: 1.7, rot: 0, vr: 0 }); return 0.5; }
+      if (st.sparkles) { this._emitSpark(false); return 0.35; }
+      return 0;
+    }
+    _holiBurst() {
+      const cols = ['#ff3fa4', '#ffd23f', BRAND.green, BRAND.cyan, BRAND.orange, BRAND.violet];
+      for (let i = 0; i < 46; i++) { const a = -Math.PI * (0.05 + this.rand() * 0.9), sp = this.rx * (1 + this.rand() * 2.6);
+        this.particles.push({ type: 'dot', x: this._cx + (this.rand() - 0.5) * this.rx * 0.6, y: this._cy - this.ry * 0.9, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, drag: 2.4, g: this.rx * 3.5,
+          life: 0, max: 0.8 + this.rand() * 0.7, size: this.rx * (0.025 + this.rand() * 0.05), color: cols[i % cols.length] }); }
+    }
+
+    /** Advance the simulation by dt seconds (sub-stepped) and draw one frame. */
+    tick(dt) { this.update(dt); this.render(); }
+    update(dt) {
+      let rem = dt; while (rem > 1e-6) { const h = Math.min(rem, 1 / 240); this._step(h); rem -= h; }
+    }
+    _step(dt) {
+      const st = STATES[this.state], spd = st.speed || 1;
+      this.t += dt;
+      if (this._timers.length) { const due = this._timers.filter(x => x.at <= this.t); if (due.length) { this._timers = this._timers.filter(x => x.at > this.t); due.forEach(x => x.fn()); } }
+      // blink: close 40% · hold 15% · open 45%
+      if (this.blinkT >= 0) { this.blinkT += dt; if (this._swap && this.blinkT >= this.blinkDur * 0.45) { this._swap(); this._swap = null; } if (this.blinkT >= this.blinkDur) this.blinkT = -1; }
+      else if (this.t >= this.nextBlink) { if (this.eyeMode === 'open') this.blink(null, 0.17); this.nextBlink = this.t + (2.4 + this.rand() * 2.8) / spd; }
+      // gaze
+      let tx = 0, ty = 0;
+      switch (st.gaze) {
+        case 'pointer':
+          if (this.pointer) { const dx = this.pointer.x - this._cx, dy = this.pointer.y - this._cy, d = Math.hypot(dx, dy) + 1e-3, m = Math.min(1, d / (this.rx * 2.6)); tx = dx / d * m; ty = dy / d * m; }
+          else { if (this.t > this.nextSacc) { this.saccX = (this.rand() - 0.5) * 0.9; this.saccY = (this.rand() - 0.5) * 0.4; this.nextSacc = this.t + 1.1 + this.rand() * 2; } tx = this.saccX; ty = this.saccY; }
+          break;
+        case 'upRight': tx = 0.55 + 0.12 * Math.sin(this.t * 1.3); ty = -0.7; break;
+        case 'downRight': tx = 0.62; ty = 0.45; break;
+        case 'scan': { const f = (this.t * 0.85) % 1; tx = f < 0.82 ? lerp(-0.7, 0.7, f / 0.82) : lerp(0.7, -0.7, (f - 0.82) / 0.18); ty = 0.12; break; }
+        case 'soft': tx = Math.sin(this.t * 0.5) * 0.25; ty = 0.18; break;
+      }
+      this.gx.set(clamp(tx, -1, 1)); this.gy.set(clamp(ty, -1, 1));
+      // glow colour (translating alternates cyan ↔ green)
+      if (st.glow2) { const m = (Math.sin(this.t * 1.6) + 1) / 2, a = hexToRgb(st.glow), b = hexToRgb(st.glow2); this.glowC.forEach((s, i) => s.set(lerp(a[i], b[i], m))); }
+      this.level.set(this.state === 'listening' ? this.levelIn : 0);
+      // continuous motion per state
+      const lean = clamp(this.px.vel * 0.05, -0.3, 0.3);
+      this.rot.set((this.baseRot || 0) + lean + (st.sway ? Math.sin(this.t * 1.1) * 0.05 : 0));
+      this.sq.set(this.state === 'listening' ? -this.level.v * 0.07 : 0);
+      if (this.state === 'reminder' && this._badgeLanded !== false && this.t > this.nextBell) { this.bellRot.kick(5); this.nextBell = this.t + 1.5; }
+      if (this.t >= this.nextEmit) { const gap = this._emit(st); this.nextEmit = this.t + (gap ? gap * (0.8 + this.rand() * 0.4) : 0.5); }
+      // hop: ballistic (rx units), squash on every landing
+      if (this.hopping) {
+        this.hopV += 22 * dt; this.hopY += this.hopV * dt;
+        if (this.hopY >= 0) { const v = this.hopV; this.hopY = 0; this.sq.kick(clamp(v * 1.1, 0, 7));
+          if (this.hopBounces > 0 && v > 1.6) { this.hopV = -v * 0.45; this.hopBounces--; this.emit('bounce', { v }); } else { this.hopping = false; this.hopV = 0; this.emit('land', { by: 'hop', v }); } }
+      }
+      // accessory drop: spring towards the head, collide with it (bounce + squash the body)
+      this.accY.step(dt);
+      if (this.acc && this.accY.v > 0) { const v = this.accY.vel; this.accY.v = 0;
+        if (v > 0.6) { this.accY.vel = -v * 0.32; this.sq.kick(clamp(v * 0.28, 0, 6.5)); this.tassel.kick(-v * 0.25);
+          if (!this.acc.landed) { this.acc.landed = true; if (this.acc.type === 'holi') { this.holiA.set(1); this._holiBurst(); } this.emit('land', { by: 'accessory', accessory: this.acc.type }); } }
+        else this.accY.vel = 0; }
+      // notification badge drop (reminder)
+      this.badgeY.step(dt);
+      if (this.badgeY.v > 0) { const v = this.badgeY.vel; this.badgeY.v = 0;
+        if (v > 0.6) { this.badgeY.vel = -v * 0.3; this.sq.kick(clamp(v * 0.24, 0, 5.5)); this.bellRot.kick(6); if (this._badgeLanded === false) { this._badgeLanded = true; this.nextBell = this.t + 0.9; this.emit('land', { by: 'badge' }); } }
+        else this.badgeY.vel = 0; }
+      this.accTilt.set(-this.rot.v * 0.5 - this.px.vel * 0.04);
+      this.tassel.set(-this.px.vel * 0.12 - this.rot.v * 0.8);
+      if (this.accOld) { this.accOld.y.step(dt); this.accOld.a -= dt * 3.2; if (this.accOld.a <= 0) this.accOld = null; }
+      [this.px, this.py, this.rot, this.sq, this.shake, this.gx, this.gy, this.badgeS, this.bellRot, this.level, this.glowA, this.dim,
+        this.eyeScale, this.lidY, this.lidA, this.blush, this.accTilt, this.tassel, this.holiA, ...this.glowC].forEach(s => s.step(dt));
+      this.sq.v = clamp(this.sq.v, -0.32, 0.32);
+      // particles
+      for (const p of this.particles) { p.life += dt; p.vx *= Math.exp(-(p.drag || 0) * dt); p.vy *= Math.exp(-(p.drag || 0) * dt); p.vy += (p.g || 0) * dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.vr) p.rot += p.vr * dt; }
+      this.particles = this.particles.filter(p => p.life < p.max);
+    }
+
+    /* ---------- drawing ---------- */
+    render() {
+      const c = this.ctx, d = this.o.dpr, st = STATES[this.state], rx = this.rx, ry = this.ry, n = this.o.n, t = this.t;
+      c.setTransform(d, 0, 0, d, 0, 0); c.clearRect(0, 0, this.w, this.h);
+      const spd = st.speed || 1;
+      const breath = Math.sin(t * 2 * Math.PI / st.breath[1]);
+      const fl = Math.sin(t * 2 * Math.PI / (st.breath[1] * 1.15) + 0.6) * st.float * rx;
+      const cx = this.hx + (this.px.v + this.shake.v) * rx, cy = this.hy + (this.py.v + this.hopY) * rx + fl;
+      this._cx = cx; this._cy = cy;
+      const glowRGB = this.glowC.map(s => clamp(s.v, 0, 255)), dim = clamp(this.dim.v, 0, 1), lvl = clamp(this.level.v, 0, 1);
+      let sy = (1 - this.sq.v) * (1 + st.breath[0] * breath) * (1 + lvl * 0.05), sx = 1 / Math.sqrt(sy) / (1 + st.breath[0] * breath * 0.4);
+      sx = 1 / sy * (1 - st.breath[0] * breath * 0.5); // area-preserving squash
+      // directional stretch from velocity
+      const vx = this.px.vel + this.shake.vel * 0.15, vy = this.py.vel + this.hopV; const speed = Math.hypot(vx, vy);
+      const stretch = clamp(speed * 0.014, 0, 0.12), ang = Math.atan2(vy, vx);
+
+      // 1) ambient mood glow
+      if (this.o.glow) {
+        c.save(); c.globalCompositeOperation = this.o.glowBlend;
+        const gr = rx * SHAPE.glowR * (1 + lvl * 0.22 + 0.03 * breath), ga = this.glowA.v * (1 + 0.06 * breath + lvl * 0.25);
+        const g = c.createRadialGradient(cx, cy + ry * 0.1, rx * 0.2, cx, cy + ry * 0.1, gr);
+        g.addColorStop(0, rgba(glowRGB, clamp(ga, 0, 1))); g.addColorStop(0.42, rgba(glowRGB, clamp(ga * 0.42, 0, 1))); g.addColorStop(1, rgba(glowRGB, 0));
+        c.fillStyle = g; c.fillRect(cx - gr, cy - gr, gr * 2, gr * 2); c.restore();
+      }
+      // 2) listening rings (follow mic level)
+      if (st.rings || this.state === 'listening') {
+        for (let i = 0; i < 3; i++) { const ph = ((t * 0.9 + i / 3) % 1), k = 1.08 + ph * (0.75 + lvl * 0.5);
+          c.save(); c.translate(cx, cy); c.strokeStyle = rgba(glowRGB, (1 - ph) * (0.18 + lvl * 0.6)); c.lineWidth = rx * (0.025 + lvl * 0.03);
+          superPath(c, rx * k, ry * k, n); c.stroke(); c.restore(); }
+      }
+      // 3) contact shadow on the floor
+      if (this.o.shadow) {
+        const floorY = this.hy + ry * SHAPE.floor + (this.userOff[1]) * rx, bottom = cy + ry * sy;
+        const hgt = Math.max(0, (floorY - bottom) / rx), sw = rx * 1.05 * (1 - Math.min(0.5, hgt * 0.35)) * sx, a = 0.5 * (1 - Math.min(0.65, hgt * 0.45)) * (1 - dim * 0.3);
+        c.save(); c.translate(cx, floorY); c.scale(1, 0.2);
+        const g = c.createRadialGradient(0, 0, 0, 0, 0, sw); g.addColorStop(0, `rgba(4,6,20,${a})`); g.addColorStop(0.6, `rgba(4,6,20,${a * 0.45})`); g.addColorStop(1, 'rgba(4,6,20,0)');
+        c.fillStyle = g; c.beginPath(); c.arc(0, 0, sw, 0, Math.PI * 2); c.fill();
+        c.globalCompositeOperation = this.o.glowBlend; const g2 = c.createRadialGradient(0, 0, 0, 0, 0, sw * 1.3); g2.addColorStop(0, rgba(glowRGB, 0.25 * this.glowA.v)); g2.addColorStop(1, rgba(glowRGB, 0));
+        c.fillStyle = g2; c.beginPath(); c.arc(0, 0, sw * 1.3, 0, Math.PI * 2); c.fill(); c.restore();
+      }
+      // body local transform: pivot near the bottom so squash flattens onto the floor
+      const piv = ry * 0.85;
+      c.save(); c.translate(cx, cy + piv); c.rotate(this.rot.v);
+      c.rotate(ang); c.scale(1 + stretch, 1 / (1 + stretch)); c.rotate(-ang);
+      c.scale(sx, sy); c.translate(0, -piv);
+      const wob = clamp(Math.abs(this.sq.vel) * 0.004, 0, 0.025);
+      this._drawBody(c, rx, ry, n, dim, t, wob);
+      if (this.holiA.v > 0.01 || (this.accOld && this.accOld.type === 'holi')) this._drawHoli(c, rx, ry, n, Math.max(this.holiA.v, this.accOld && this.accOld.type === 'holi' ? this.accOld.a : 0));
+      this._drawFace(c, rx, ry, st);
+      if (this.accOld && this.accOld.type !== 'holi') { c.save(); c.globalAlpha = clamp(this.accOld.a, 0, 1); this._drawAccessory(c, this.accOld.type, rx, ry, this.accOld.y.v, 0); c.restore(); }
+      if (this.acc) this._drawAccessory(c, this.acc.type, rx, ry, this.accY.v, this.accTilt.v);
+      this._drawBadge(c, rx, ry, n, st, glowRGB, lvl);
+      c.restore();
+      // 4) particles
+      this._drawParticles(c);
+    }
+
+    _drawBody(c, rx, ry, n, dim, t, wob) {
+      const filt = dim > 0.01 ? `saturate(${1 - dim * 0.75}) brightness(${1 - dim * 0.42})` : 'none';
+      const F = (extra) => (filt === 'none' ? (extra || 'none') : filt + (extra ? ' ' + extra : ''));
+      c.save(); c.filter = F();
+      superPath(c, rx, ry, n, wob, t * 9); c.save(); c.clip();
+      const R = Math.max(rx, ry) * 1.25;
+      let g = c.createLinearGradient(-rx, -ry, rx, ry);
+      g.addColorStop(0, '#b4ecff'); g.addColorStop(0.36, '#82a9ff'); g.addColorStop(0.68, '#9d7cff'); g.addColorStop(1, '#d68aff');
+      c.fillStyle = g; c.fillRect(-R, -R, R * 2, R * 2);
+      const blob = (x, y, r, col, a) => { const gg = c.createRadialGradient(x * rx, y * ry, 0, x * rx, y * ry, r * rx); gg.addColorStop(0, rgba(hexToRgb(col), a)); gg.addColorStop(1, rgba(hexToRgb(col), 0)); c.fillStyle = gg; c.fillRect(-R, -R, R * 2, R * 2); };
+      const sw = Math.sin(t * 0.7) * 0.06;
+      blob(-0.58 + sw, 0.66, 0.78, BRAND.green, 0.42); blob(0.52, 0.36 - sw, 0.82, '#ff86d8', 0.45);
+      blob(-0.38, -0.36 + sw, 0.72, BRAND.cyan, 0.4); blob(0.46 + sw, -0.58, 0.62, '#d9ccff', 0.45);
+      if (c.createConicGradient) {
+        const cg = c.createConicGradient(t * 0.35, -rx * 0.1, -ry * 0.05);
+        [[0, BRAND.cyan], [0.2, BRAND.violet], [0.42, '#ff7ad1'], [0.6, BRAND.blue], [0.8, BRAND.green], [1, BRAND.cyan]].forEach(([o, col]) => cg.addColorStop(o, col));
+        c.globalAlpha = 0.3; c.globalCompositeOperation = 'soft-light'; c.fillStyle = cg; c.fillRect(-R, -R, R * 2, R * 2);
+        c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+      }
+      // form shading: light from the top-left, core shadow bottom-right
+      g = c.createRadialGradient(-rx * 0.35, -ry * 0.45, 0, -rx * 0.35, -ry * 0.45, rx * 1.75);
+      g.addColorStop(0, 'rgba(255,255,255,0.20)'); g.addColorStop(0.45, 'rgba(70,30,150,0)'); g.addColorStop(1, 'rgba(36,10,100,0.55)');
+      c.fillStyle = g; c.fillRect(-R, -R, R * 2, R * 2);
+      // bounce light from the floor
+      c.filter = F(`blur(${rx * 0.08}px)`); c.fillStyle = 'rgba(120,255,214,0.42)';
+      c.beginPath(); c.ellipse(rx * 0.12, ry * 0.98, rx * 0.72, ry * 0.2, 0, 0, Math.PI * 2); c.fill();
+      // fresnel rim (inner glow following the superellipse)
+      c.filter = F(`blur(${rx * 0.06}px)`); c.lineWidth = rx * 0.16; c.strokeStyle = 'rgba(255,255,255,0.34)';
+      superPath(c, rx, ry, n, wob, t * 9); c.stroke();
+      // soft broad highlight + sharp specular
+      c.filter = F(`blur(${rx * 0.05}px)`); c.fillStyle = 'rgba(255,255,255,0.22)';
+      c.beginPath(); c.ellipse(-rx * 0.3, -ry * 0.42, rx * 0.5, ry * 0.32, -0.5, 0, Math.PI * 2); c.fill();
+      c.filter = F();
+      const S = SHAPE.specular; c.save(); c.translate(S.x * rx, S.y * ry); c.rotate(S.rot);
+      g = c.createRadialGradient(0, 0, 0, 0, 0, S.rx * rx); g.addColorStop(0, 'rgba(255,255,255,0.97)'); g.addColorStop(0.72, 'rgba(255,255,255,0.88)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.scale(1, S.ry / S.rx * ry / rx); c.fillStyle = g; c.beginPath(); c.arc(0, 0, S.rx * rx, 0, Math.PI * 2); c.fill(); c.restore();
+      c.fillStyle = 'rgba(255,255,255,0.92)'; c.beginPath(); c.arc(-rx * 0.13, -ry * 0.71, rx * 0.04, 0, Math.PI * 2); c.fill();
+      c.restore(); // unclip
+      c.lineWidth = Math.max(1, rx * 0.014); c.strokeStyle = 'rgba(255,255,255,0.5)'; superPath(c, rx, ry, n, wob, t * 9); c.stroke();
+      c.restore();
+    }
+
+    _drawHoli(c, rx, ry, n, a) {
+      const spots = [[-0.62, 0.3, 0.22, '#ff3fa4'], [0.55, 0.42, 0.2, '#ffd23f'], [0.12, -0.66, 0.17, BRAND.green], [-0.22, 0.62, 0.17, BRAND.cyan], [0.66, -0.12, 0.13, BRAND.orange], [-0.5, -0.5, 0.12, BRAND.violet]];
+      c.save(); superPath(c, rx, ry, n); c.clip(); c.globalAlpha = clamp(a, 0, 1) * 0.6;
+      spots.forEach(([x, y, r, col], i) => { const rr = mulberry32(i * 31 + 5); c.fillStyle = col;
+        for (let k = 0; k < 7; k++) { const ox = (rr() - 0.5) * r * 1.3, oy = (rr() - 0.5) * r * 1.1, s = r * (0.35 + rr() * 0.5); c.beginPath(); c.arc((x + ox) * rx, (y + oy) * ry, s * rx, 0, Math.PI * 2); c.fill(); }
+        for (let k = 0; k < 5; k++) { const ox = (rr() - 0.5) * r * 2.4, oy = (rr() - 0.5) * r * 3; c.beginPath(); c.arc((x + ox) * rx, (y + oy) * ry, rx * 0.012 * (1 + rr() * 2), 0, Math.PI * 2); c.fill(); } });
+      c.restore();
+    }
+
+    _eyeGeom(rx, ry) {
+      const E = SHAPE.eye, gx = this.gx.v, gy = this.gy.v, out = [];
+      for (const side of [-1, 1]) {
+        const yaw = side * E.yaw + gx * 0.36, pitch = E.pitch + gy * 0.3;
+        out.push({ side, x: rx * 0.96 * Math.sin(yaw), y: ry * 0.96 * Math.sin(pitch) + ry * 0.02, fw: Math.pow(Math.cos(yaw), 0.7), fh: Math.pow(Math.cos(pitch), 0.7) });
+      }
+      return out;
+    }
+    _drawFace(c, rx, ry, st) {
+      const E = SHAPE.eye, es = this.eyeScale.v;
+      let open = 1; if (this.blinkT >= 0) { const f = this.blinkT / this.blinkDur; open = f < 0.4 ? 1 - f / 0.4 : f < 0.55 ? 0 : (f - 0.55) / 0.45; open = clamp(open, 0, 1); }
+      const squeeze = this.t < this.squeezeUntil;
+      const eyes = this._eyeGeom(rx, ry);
+      // blush
+      if (this.blush.v > 0.02) { c.save(); c.filter = `blur(${rx * 0.04}px)`; c.fillStyle = `rgba(255,105,170,${0.5 * this.blush.v})`;
+        eyes.forEach(e => { c.beginPath(); c.ellipse(e.x + e.side * rx * 0.1, e.y + rx * 0.2, rx * 0.11, rx * 0.06, 0, 0, Math.PI * 2); c.fill(); }); c.restore(); }
+      for (const e of eyes) {
+        const w = rx * E.w * es * e.fw, h = rx * E.h * es * e.fh; c.save(); c.translate(e.x, e.y);
+        const ink = '#0e1336';
+        if (squeeze) { c.strokeStyle = ink; c.lineWidth = w * 0.3; c.lineCap = 'round'; c.lineJoin = 'round'; const s = -e.side;
+          c.beginPath(); c.moveTo(-s * w * 0.42, -h * 0.34); c.lineTo(s * w * 0.42, 0); c.lineTo(-s * w * 0.42, h * 0.34); c.stroke(); }
+        else if (this.eyeMode === 'happy') { c.strokeStyle = ink; c.lineWidth = w * 0.32; c.lineCap = 'round'; const k = Math.max(0.15, open);
+          c.beginPath(); c.moveTo(-w * 0.55, h * 0.12); c.quadraticCurveTo(0, -h * 0.62 * k, w * 0.55, h * 0.12); c.stroke(); }
+        else if (this.eyeMode === 'closed') { c.strokeStyle = ink; c.lineWidth = w * 0.26; c.lineCap = 'round';
+          c.beginPath(); c.moveTo(-w * 0.58, -h * 0.02); c.quadraticCurveTo(0, h * 0.42, w * 0.58, -h * 0.02); c.stroke(); }
+        else {
+          const hh = Math.max(h * open, h * 0.07), inner = -e.side, ly = this.lidY.v, la = this.lidA.v;
+          if (ly > 0.005 || Math.abs(la) > 0.005) { const yAt = x => -h / 2 + ly * h - la * inner * x * 0.9;
+            c.beginPath(); c.moveTo(-w * 2, yAt(-w * 2)); c.lineTo(w * 2, yAt(w * 2)); c.lineTo(w * 2, h * 2); c.lineTo(-w * 2, h * 2); c.closePath(); c.clip(); }
+          const g = c.createLinearGradient(0, -hh / 2, 0, hh / 2); g.addColorStop(0, '#0b0f2c'); g.addColorStop(1, '#27347a');
+          c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, w / 2, hh / 2, 0, 0, Math.PI * 2); c.fill();
+          if (open > 0.35) { c.fillStyle = 'rgba(255,255,255,0.96)'; c.beginPath(); c.ellipse(-w * 0.16, -hh * 0.2, w * 0.16, w * 0.19 * open, -0.3, 0, Math.PI * 2); c.fill();
+            c.fillStyle = 'rgba(160,220,255,0.6)'; c.beginPath(); c.arc(w * 0.17, hh * 0.22, w * 0.07, 0, Math.PI * 2); c.fill(); }
+        }
+        c.restore();
+      }
+    }
+
+    _drawBadge(c, rx, ry, n, st, glowRGB, lvl) {
+      if (!this.badge) return;
+      const s = Math.max(0, this.badgeS.v); if (s < 0.01) return;
+      const [bx0, by0] = superPoint(SHAPE.badgeAngle, rx, ry, n);
+      const small = this.badge === 'presence';
+      const br = rx * (small ? 0.1 : SHAPE.badgeR), bx = bx0 * (small ? 0.93 : 0.98), by = by0 * (small ? 0.93 : 0.98) + this.badgeY.v * rx;
+      const col = hexToRgb(STATES[this.state].glow), t = this.t;
+      c.save(); c.translate(bx, by); c.scale(s, s);
+      if (this.badge === 'bell') c.rotate(this.bellRot.v * 0.12 + Math.sin(t * 2) * 0.03);
+      c.shadowColor = 'rgba(5,8,30,0.45)'; c.shadowBlur = br * 0.6; c.shadowOffsetY = br * 0.18;
+      const g = c.createLinearGradient(0, -br, 0, br); g.addColorStop(0, rgba(col.map(v => Math.min(255, v + 60)), 1)); g.addColorStop(1, rgba(col, 1));
+      c.fillStyle = small ? BRAND.green : g; c.beginPath(); c.arc(0, 0, br, 0, Math.PI * 2); c.fill();
+      c.shadowColor = 'transparent'; c.lineWidth = br * (small ? 0.32 : 0.14); c.strokeStyle = 'rgba(255,255,255,0.95)'; c.stroke();
+      if (small) { c.restore(); return; }
+      const b = br, W = '#ffffff'; c.strokeStyle = W; c.fillStyle = W; c.lineWidth = b * 0.13; c.lineCap = 'round'; c.lineJoin = 'round';
+      switch (this.badge) {
+        case 'mic': roundRect(c, -b * 0.18, -b * 0.52, b * 0.36, b * 0.62, b * 0.18); c.fill();
+          c.beginPath(); c.arc(0, -b * 0.06, b * 0.33, 0.15, Math.PI - 0.15); c.stroke(); c.beginPath(); c.moveTo(0, b * 0.28); c.lineTo(0, b * 0.48); c.stroke();
+          c.globalAlpha = 0.85; c.lineWidth = b * 0.09; for (let i = 1; i <= 2; i++) { const a = clamp(lvl * 1.6 - (i - 1) * 0.4, 0, 1); if (a > 0.05) { c.globalAlpha = a; c.beginPath(); c.arc(0, -b * 0.15, b * (0.45 + i * 0.17), -0.7, 0.7); c.stroke(); c.beginPath(); c.arc(0, -b * 0.15, b * (0.45 + i * 0.17), Math.PI - 0.7, Math.PI + 0.7); c.stroke(); } } c.globalAlpha = 1; break;
+        case 'dots': for (let i = 0; i < 3; i++) { const yy = -Math.max(0, Math.sin(t * 7 - i * 0.9)) * b * 0.2; c.beginPath(); c.arc((i - 1) * b * 0.36, yy + b * 0.04, b * 0.13, 0, Math.PI * 2); c.fill(); } break;
+        case 'send': c.beginPath(); c.moveTo(-b * 0.5, -b * 0.08); c.lineTo(b * 0.52, -b * 0.46); c.lineTo(b * 0.14, b * 0.52); c.lineTo(-b * 0.02, b * 0.1); c.closePath(); c.fill();
+          c.strokeStyle = rgba(col, 1); c.lineWidth = b * 0.08; c.beginPath(); c.moveTo(-b * 0.02, b * 0.1); c.lineTo(b * 0.5, -b * 0.44); c.stroke(); break;
+        case 'bell': c.beginPath(); c.moveTo(-b * 0.42, b * 0.26); c.quadraticCurveTo(-b * 0.3, b * 0.12, -b * 0.3, -b * 0.08); c.quadraticCurveTo(-b * 0.28, -b * 0.46, 0, -b * 0.48);
+          c.quadraticCurveTo(b * 0.28, -b * 0.46, b * 0.3, -b * 0.08); c.quadraticCurveTo(b * 0.3, b * 0.12, b * 0.42, b * 0.26); c.closePath(); c.fill();
+          c.beginPath(); c.arc(0, b * 0.36, b * 0.11, 0, Math.PI * 2); c.fill(); c.beginPath(); c.arc(0, -b * 0.52, b * 0.07, 0, Math.PI * 2); c.fill(); break;
+        case 'offline': // cloud with a slash
+          c.lineWidth = b * 0.11; c.beginPath(); c.moveTo(-b * 0.36, b * 0.26); c.arc(-b * 0.28, b * 0.06, b * 0.2, Math.PI * 0.6, Math.PI * 1.45); c.arc(0, -b * 0.08, b * 0.27, Math.PI * 1.1, Math.PI * 1.95);
+          c.arc(b * 0.3, b * 0.08, b * 0.18, Math.PI * 1.5, Math.PI * 0.5); c.closePath(); c.stroke();
+          c.lineWidth = b * 0.12; c.beginPath(); c.moveTo(-b * 0.46, -b * 0.46); c.lineTo(b * 0.46, b * 0.46); c.stroke(); break;
+        case 'lang': { const f = (t - this.enterT) / 0.75, i = Math.floor(f) % GLYPHS.length, ph = f % 1, k = ph < 0.14 ? ph / 0.14 : 1;
+          c.save(); c.scale(k, 1); c.font = `800 ${b * 0.95}px ${FONT_STACK}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(GLYPHS[i], 0, b * 0.04); c.restore(); break; }
+        case 'alert': roundRect(c, -b * 0.09, -b * 0.5, b * 0.18, b * 0.62, b * 0.09); c.fill(); c.beginPath(); c.arc(0, b * 0.36, b * 0.11, 0, Math.PI * 2); c.fill(); break;
+        case 'check': c.lineWidth = b * 0.17; c.beginPath(); c.moveTo(-b * 0.38, b * 0.02); c.lineTo(-b * 0.1, b * 0.3); c.lineTo(b * 0.4, -b * 0.28); c.stroke(); break;
+        case 'moon': c.beginPath(); c.arc(0, 0, b * 0.42, 0, Math.PI * 2); c.fill(); c.globalCompositeOperation = 'destination-out'; c.beginPath(); c.arc(b * 0.22, -b * 0.16, b * 0.36, 0, Math.PI * 2); c.fill(); break;
+      }
+      c.restore();
+    }
+
+    _drawAccessory(c, type, rx, ry, dropY, tilt) {
+      const u = rx, t = this.t;
+      c.save(); c.translate(0, -ry * 0.8 + dropY * rx); c.rotate(tilt);
+      const P = (pts) => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x * u, y * u) : c.moveTo(x * u, y * u)); c.closePath(); };
+      if (type === 'santa') {
+        c.save(); c.shadowColor = 'rgba(30,0,10,0.35)'; c.shadowBlur = u * 0.1; c.shadowOffsetY = u * 0.04;
+        let g = c.createLinearGradient(-0.6 * u, -0.9 * u, 0.5 * u, 0); g.addColorStop(0, '#ff5a52'); g.addColorStop(1, '#b3172b');
+        c.fillStyle = g; c.beginPath(); c.moveTo(0.56 * u, -0.04 * u);
+        c.bezierCurveTo(0.5 * u, -0.62 * u, 0.12 * u, -0.98 * u, -0.22 * u, -0.92 * u);
+        c.bezierCurveTo(-0.52 * u, -0.86 * u, -0.7 * u, -0.62 * u, -0.78 * u, -0.38 * u);
+        c.bezierCurveTo(-0.62 * u, -0.48 * u, -0.44 * u, -0.56 * u, -0.32 * u, -0.48 * u);
+        c.bezierCurveTo(-0.44 * u, -0.34 * u, -0.54 * u, -0.2 * u, -0.56 * u, -0.04 * u); c.closePath(); c.fill(); c.restore();
+        c.fillStyle = 'rgba(255,255,255,0.18)'; c.beginPath(); c.ellipse(-0.08 * u, -0.6 * u, 0.16 * u, 0.06 * u, -0.6, 0, Math.PI * 2); c.fill();
+        g = c.createLinearGradient(0, -0.16 * u, 0, 0.12 * u); g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#dfe4f2');
+        c.fillStyle = g; roundRect(c, -0.68 * u, -0.15 * u, 1.36 * u, 0.26 * u, 0.13 * u); c.fill();
+        c.fillStyle = 'rgba(190,200,225,0.55)'; for (let i = 0; i < 9; i++) { c.beginPath(); c.arc((-0.56 + i * 0.14) * u, (-0.02 + (i % 2) * 0.05) * u, 0.025 * u, 0, Math.PI * 2); c.fill(); }
+        const pg = c.createRadialGradient(-0.82 * u, -0.42 * u, 0, -0.78 * u, -0.38 * u, 0.15 * u); pg.addColorStop(0, '#fff'); pg.addColorStop(1, '#d9deee');
+        c.fillStyle = pg; c.beginPath(); c.arc(-0.79 * u, -0.37 * u, 0.14 * u, 0, Math.PI * 2); c.fill();
+      } else if (type === 'gradcap') {
+        c.fillStyle = '#1c2246'; c.beginPath(); c.moveTo(-0.46 * u, 0.04 * u); c.lineTo(-0.42 * u, -0.3 * u); c.quadraticCurveTo(0, -0.4 * u, 0.42 * u, -0.3 * u); c.lineTo(0.46 * u, 0.04 * u); c.quadraticCurveTo(0, 0.14 * u, -0.46 * u, 0.04 * u); c.fill();
+        c.fillStyle = '#10142e'; P([[-0.88, -0.32], [0, -0.55], [0.88, -0.32], [0, -0.09]]); c.fill();
+        const g = c.createLinearGradient(0, -0.62 * u, 0, -0.14 * u); g.addColorStop(0, '#3a4380'); g.addColorStop(1, '#232a58');
+        c.fillStyle = g; P([[-0.88, -0.38], [0, -0.61], [0.88, -0.38], [0, -0.15]]); c.fill();
+        c.strokeStyle = 'rgba(255,255,255,0.14)'; c.lineWidth = u * 0.015; c.stroke();
+        c.fillStyle = '#f5b82e'; c.beginPath(); c.arc(0, -0.38 * u, 0.05 * u, 0, Math.PI * 2); c.fill();
+        const a = this.tassel.v * 0.6 + Math.sin(t * 1.7) * 0.05, ex = -0.66 * u + Math.sin(a) * 0.4 * u, ey = -0.4 * u + Math.cos(a) * 0.4 * u;
+        c.strokeStyle = '#f5b82e'; c.lineWidth = u * 0.03; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, -0.38 * u); c.lineTo(-0.66 * u, -0.4 * u); c.lineTo(ex, ey); c.stroke();
+        c.save(); c.translate(ex, ey); c.rotate(-a); c.fillStyle = '#f5b82e'; P([[-0.06, 0], [0.06, 0], [0.08, 0.2], [-0.08, 0.2]]); c.fill(); c.restore();
+      } else if (type === 'diya') {
+        // flame glow
+        c.save(); c.globalCompositeOperation = 'screen'; const fl = 1 + Math.sin(t * 17) * 0.05 + Math.sin(t * 29 + 1) * 0.04;
+        const gg = c.createRadialGradient(0.33 * u, -0.36 * u, 0, 0.33 * u, -0.36 * u, 0.75 * u * fl); gg.addColorStop(0, 'rgba(255,190,80,0.55)'); gg.addColorStop(1, 'rgba(255,140,40,0)');
+        c.fillStyle = gg; c.beginPath(); c.arc(0.33 * u, -0.36 * u, 0.75 * u * fl, 0, Math.PI * 2); c.fill(); c.restore();
+        // bowl
+        let g = c.createLinearGradient(0, -0.12 * u, 0, 0.2 * u); g.addColorStop(0, '#e07a3a'); g.addColorStop(1, '#8e3a15');
+        c.fillStyle = g; c.beginPath(); c.moveTo(-0.44 * u, -0.1 * u); c.quadraticCurveTo(-0.36 * u, 0.2 * u, 0, 0.2 * u); c.quadraticCurveTo(0.36 * u, 0.2 * u, 0.44 * u, -0.1 * u);
+        c.lineTo(0.56 * u, -0.17 * u); c.lineTo(0.4 * u, -0.17 * u); c.closePath(); c.fill();
+        c.fillStyle = '#f3a55c'; c.beginPath(); c.ellipse(-0.02 * u, -0.12 * u, 0.44 * u, 0.075 * u, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#5a2208'; c.beginPath(); c.ellipse(-0.04 * u, -0.12 * u, 0.36 * u, 0.045 * u, 0, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#ffd34d'; for (let i = 0; i < 5; i++) { c.beginPath(); c.arc((-0.28 + i * 0.14) * u, 0.06 * u + Math.abs(i - 2) * -0.015 * u, 0.028 * u, 0, Math.PI * 2); c.fill(); }
+        c.strokeStyle = '#ffd34d'; c.lineWidth = u * 0.018; c.beginPath(); c.moveTo(-0.36 * u, -0.02 * u); c.quadraticCurveTo(0, 0.08 * u, 0.36 * u, -0.02 * u); c.stroke();
+        // flame (flickers)
+        c.save(); c.translate(0.4 * u, -0.18 * u); c.rotate(Math.sin(t * 6) * 0.08 - this.px.vel * 0.05); c.scale(1, fl);
+        g = c.createRadialGradient(0, -0.1 * u, 0, 0, -0.12 * u, 0.24 * u); g.addColorStop(0, '#fffbe6'); g.addColorStop(0.35, '#ffd34d'); g.addColorStop(0.8, '#ff7a1a'); g.addColorStop(1, 'rgba(255,90,20,0.0)');
+        c.fillStyle = g; c.beginPath(); c.moveTo(0, -0.36 * u); c.bezierCurveTo(0.12 * u, -0.18 * u, 0.12 * u, 0, 0, 0.01 * u); c.bezierCurveTo(-0.12 * u, 0, -0.12 * u, -0.18 * u, 0, -0.36 * u); c.fill(); c.restore();
+      } else if (type === 'holi') {
+        if (this.acc && this.acc.type === 'holi' && !this.acc.landed) { // gulal puff falling
+          const cols = ['#ff3fa4', '#ffd23f', BRAND.green, BRAND.cyan, BRAND.orange];
+          cols.forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.arc(Math.cos(i * 1.3 + t * 3) * 0.12 * u, -0.25 * u + Math.sin(i * 1.3 + t * 3) * 0.1 * u, 0.13 * u, 0, Math.PI * 2); c.fill(); });
+        }
+      }
+      c.restore();
+    }
+
+    _drawParticles(c) {
+      for (const p of this.particles) {
+        const f = p.life / p.max, a = f < 0.15 ? f / 0.15 : f > 0.7 ? (1 - f) / 0.3 : 1;
+        c.save(); c.globalAlpha = clamp(a, 0, 1); c.translate(p.x + (p.wob ? Math.sin(p.life * 3) * p.wob : 0), p.y);
+        if (p.rot) c.rotate(p.rot);
+        if (p.type === 'spark') { const s = p.size * (0.6 + Math.sin(f * Math.PI) * 0.6); c.fillStyle = p.color; c.shadowColor = p.color; c.shadowBlur = s; star4(c, s); c.fill(); }
+        else if (p.type === 'text') { c.font = p.font; c.fillStyle = p.color; c.textAlign = 'center'; c.textBaseline = 'middle'; c.shadowColor = 'rgba(0,0,0,0.25)'; c.shadowBlur = 6; c.fillText(p.text, 0, 0); }
+        else if (p.type === 'dot') { c.fillStyle = p.color; c.beginPath(); c.arc(0, 0, p.size, 0, Math.PI * 2); c.fill(); }
+        c.restore();
+      }
+    }
+  }
+
+  return { AkayaBubble, Spring, STATES, STATE_ORDER, ACCESSORIES, SHAPE, SPRINGS, BRAND, superPath, superPoint, GREETINGS, GLYPHS, FONT_STACK };
+});
+
+</script>
+<script>
+/*!
+ * akaya-state-machine.js: a small event-driven state machine for the Akaya bubble.
+ * Works as a classic <script> (window.AkayaStateMachine) or via CommonJS require.
+ *
+ *   const machine = AkayaStateMachine.create({ bubble });
+ *   machine.send('MIC_ON');        // idle → listening
+ *   machine.send('SPEECH_END');    // listening → thinking
+ *   machine.send('DRAFT_READY');   // thinking → reply   (draft written, waiting for Send)
+ *   machine.send('SEND');          // reply → success → (auto) idle
+ *
+ * '@rest' means the resting state: 'idle' when online, 'offline' in on-device mode.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.AkayaStateMachine = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const TRANSITIONS = {
+    idle:        { MIC_ON: 'listening', TRANSLATE: 'translating', REMINDER: 'reminder', IDLE_TIMEOUT: 'sleeping', ERROR: 'error' },
+    offline:     { MIC_ON: 'listening', TRANSLATE: 'translating', REMINDER: 'reminder', IDLE_TIMEOUT: 'sleeping', ERROR: 'error' },
+    listening:   { SPEECH_END: 'thinking', MIC_OFF: '@rest', ERROR: 'error' },
+    thinking:    { DRAFT_READY: 'reply', CANCEL: '@rest', ERROR: 'error' },
+    translating: { DRAFT_READY: 'reply', CANCEL: '@rest', ERROR: 'error' },
+    reply:       { SEND: 'success', DISCARD: '@rest', MIC_ON: 'listening', ERROR: 'error' },
+    reminder:    { DISMISS: '@rest', SNOOZE: '@rest', DONE: 'success' },
+    success:     { DONE: '@rest', MIC_ON: 'listening' },
+    error:       { RETRY: 'listening', DISMISS: '@rest' },
+    sleeping:    { WAKE: '@rest', TAP: '@rest', MIC_ON: 'listening', REMINDER: 'reminder' },
+  };
+  /** States that leave by themselves. */
+  const AUTO = { success: { after: 1800, event: 'DONE' }, error: { after: 4000, event: 'DISMISS' } };
+  /** A reminder never interrupts these. It waits and fires when the bubble is back at rest. */
+  const BUSY = ['listening', 'thinking', 'translating'];
+
+  function create({ bubble = null, initial = 'idle', online = true, sleepAfter = 60000, scheduler = null } = {}) {
+    const sch = scheduler || (bubble && bubble.scheduler) || { set: (fn, ms) => setTimeout(fn, ms), clear: id => clearTimeout(id) };
+    let state = initial, isOnline = online, autoId = null, sleepId = null, pendingReminder = false;
+    const listeners = [];
+    const rest = () => (isOnline ? 'idle' : 'offline');
+    const isRest = s => s === 'idle' || s === 'offline';
+
+    function enter(next, event, payload) {
+      const from = state; state = next;
+      if (bubble) bubble.setState(next);
+      if (autoId != null) { sch.clear(autoId); autoId = null; }
+      if (AUTO[next]) autoId = sch.set(() => send(AUTO[next].event), AUTO[next].after);
+      armSleep();
+      listeners.forEach(fn => fn({ from, to: next, event, payload, online: isOnline }));
+      if (isRest(next) && pendingReminder) { pendingReminder = false; sch.set(() => send('REMINDER'), 400); }
+    }
+    function armSleep() {
+      if (sleepId != null) { sch.clear(sleepId); sleepId = null; }
+      if (isRest(state) && sleepAfter > 0) sleepId = sch.set(() => send('IDLE_TIMEOUT'), sleepAfter);
+    }
+    /** Send an event. Returns true if it caused a transition (or changed the online mode). */
+    function send(event, payload) {
+      if (event === 'NETWORK_OFF' || event === 'NETWORK_ON') {
+        isOnline = event === 'NETWORK_ON';
+        if (isRest(state) && state !== rest()) enter(rest(), event, payload);
+        return true;
+      }
+      if (event === 'REMINDER' && BUSY.includes(state)) { pendingReminder = true; return false; }
+      let to = (TRANSITIONS[state] || {})[event];
+      if (!to && event === 'ERROR') to = 'error';
+      if (!to) { armSleep(); return false; }
+      if (to === '@rest') to = rest();
+      enter(to, event, payload);
+      return true;
+    }
+    return {
+      get state() { return state; },
+      get online() { return isOnline; },
+      send,
+      can: event => !!((TRANSITIONS[state] || {})[event]) || event === 'ERROR' || event === 'NETWORK_ON' || event === 'NETWORK_OFF',
+      /** Jump straight to a state (design tools and demos). */
+      force: (s, event = 'FORCE') => { enter(s === '@rest' ? rest() : s, event); },
+      on: fn => { listeners.push(fn); return () => listeners.splice(listeners.indexOf(fn), 1); },
+      destroy: () => { if (autoId != null) sch.clear(autoId); if (sleepId != null) sch.clear(sleepId); listeners.length = 0; },
+    };
+  }
+  return { create, TRANSITIONS, AUTO };
+});
+
+</script>
+<script>
+/*!
+ * akaya-sfx.js: tiny synthesized Web Audio sound effects for the Akaya bubble (no audio files).
+ * Classic <script> (window.AkayaSfx) or CommonJS.
+ *
+ *   const sfx = AkayaSfx.create();            // enabled by default; needs one user gesture
+ *   window.addEventListener('pointerdown', () => sfx.unlock(), { once: true });
+ *   sfx.play('state', { state: 'listening' }); sfx.setMuted(true);
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.AkayaSfx = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+  function create({ volume = 0.55 } = {}) {
+    let ctx = null, master = null, noiseBuf = null, muted = false;
+    const unlock = () => {
+      if (!ctx) {
+        const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext); if (!AC) return false;
+        ctx = new AC(); const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -14; comp.ratio.value = 4;
+        master = ctx.createGain(); master.gain.value = muted ? 0 : volume; master.connect(comp); comp.connect(ctx.destination);
+        noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ctx.state === 'suspended') ctx.resume(); return true;
+    };
+    const T = (w = 0) => ctx.currentTime + 0.005 + w;
+    function env(g, t0, a, d, peak) { g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(peak, t0 + a); g.gain.exponentialRampToValueAtTime(0.0001, t0 + a + d); }
+    function tone(f, dur, { type = 'sine', to = null, gain = 0.2, a = 0.005, when = 0, pan = 0, vib = 0 } = {}) {
+      const t0 = T(when), o = ctx.createOscillator(), g = ctx.createGain(), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      o.type = type; o.frequency.setValueAtTime(f, t0); if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+      if (vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 14; lg.gain.setValueAtTime(f * vib, t0); lg.gain.exponentialRampToValueAtTime(0.01, t0 + dur); l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + dur + 0.05); }
+      env(g, t0, a, dur, gain); o.connect(g); if (p) { p.pan.value = pan; g.connect(p); p.connect(master); } else g.connect(master);
+      o.start(t0); o.stop(t0 + a + dur + 0.05);
+    }
+    function noise(dur, { type = 'bandpass', f = 1200, to = null, q = 1, gain = 0.15, a = 0.01, when = 0 } = {}) {
+      const t0 = T(when), s = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), g = ctx.createGain();
+      s.buffer = noiseBuf; bf.type = type; bf.Q.value = q; bf.frequency.setValueAtTime(f, t0); if (to) bf.frequency.exponentialRampToValueAtTime(to, t0 + a + dur);
+      env(g, t0, a, dur, gain); s.connect(bf); bf.connect(g); g.connect(master); s.start(t0, Math.random()); s.stop(t0 + a + dur + 0.05);
+    }
+    const PENTA = [1568, 1760, 2093, 2349, 2637, 3136];
+    const S = {
+      pop: () => { tone(820, 0.09, { to: 480, gain: 0.22 }); noise(0.02, { f: 2500, q: 2, gain: 0.04 }); },
+      tap: () => { tone(1500, 0.035, { gain: 0.1, to: 1200 }); noise(0.012, { f: 4000, q: 3, gain: 0.05 }); },
+      whooshUp: () => noise(0.34, { f: 350, to: 2600, q: 1.4, gain: 0.2, a: 0.14 }),
+      whooshDown: () => noise(0.3, { f: 2600, to: 350, q: 1.4, gain: 0.17, a: 0.1 }),
+      chime: () => { tone(1318.5, 0.5, { gain: 0.13, type: 'triangle' }); tone(1975.5, 0.6, { gain: 0.11, when: 0.09, type: 'triangle' }); },
+      typing: () => { noise(0.012, { f: 3200 + Math.random() * 900, q: 5, gain: 0.07 }); tone(2200 + Math.random() * 400, 0.012, { gain: 0.02 }); },
+      reply: () => { noise(0.22, { f: 500, to: 2400, q: 1.3, gain: 0.13, a: 0.1 }); tone(660, 0.12, { to: 990, gain: 0.16, when: 0.2 }); tone(1320, 0.2, { gain: 0.06, when: 0.24, type: 'triangle' }); },
+      bell: () => { [[1, 0.16, 1.1], [2.76, 0.06, 0.6], [5.4, 0.03, 0.35]].forEach(([m, g, d]) => { tone(1320 * m, d, { gain: g, a: 0.002 }); tone(1320 * m, d * 0.8, { gain: g * 0.6, a: 0.002, when: 0.3, pan: 0.3 }); tone(1320 * m, d * 0.6, { gain: g * 0.35, a: 0.002, when: 0.56, pan: -0.3 }); }); },
+      offline: () => { tone(262, 0.6, { to: 196, gain: 0.14, a: 0.06 }); tone(131, 0.7, { to: 98, gain: 0.08, a: 0.08 }); },
+      blip: () => tone(PENTA[(Math.random() * PENTA.length) | 0], 0.06, { type: 'triangle', gain: 0.06, pan: Math.random() * 1.2 - 0.6 }),
+      error: () => { tone(392, 0.11, { type: 'triangle', gain: 0.16 }); tone(294, 0.2, { type: 'triangle', gain: 0.16, when: 0.13, to: 262 }); },
+      success: () => { [1046.5, 1318.5, 1568, 2093].forEach((f, i) => { tone(f, 0.45, { gain: 0.1, when: i * 0.07, type: 'triangle', pan: -0.4 + i * 0.27 }); }); noise(0.4, { type: 'highpass', f: 6000, gain: 0.03, when: 0.2, a: 0.05 }); },
+      snore: () => { noise(0.9, { type: 'lowpass', f: 420, q: 4, gain: 0.07, a: 0.7 }); tone(90, 0.9, { gain: 0.03, a: 0.6 }); noise(1.1, { type: 'lowpass', f: 300, to: 180, q: 3, gain: 0.05, a: 0.15, when: 1.5 }); },
+      lullaby: () => { [784, 659, 523].forEach((f, i) => tone(f, 0.6, { gain: 0.05, when: i * 0.38, a: 0.04 })); },
+      boing: () => { tone(330, 0.32, { to: 165, gain: 0.16, vib: 0.18 }); noise(0.16, { type: 'lowpass', f: 1600, to: 260, q: 2, gain: 0.12, a: 0.01, when: 0.01 }); },
+      squish: () => noise(0.18, { type: 'lowpass', f: 1800, to: 280, q: 3, gain: 0.16, a: 0.01 }),
+      bounce: () => tone(230, 0.09, { to: 150, gain: 0.12 }),
+      drop: () => tone(1250, 0.26, { to: 620, type: 'triangle', gain: 0.04 }),
+      puff: () => { noise(0.35, { type: 'lowpass', f: 2400, to: 500, q: 0.8, gain: 0.14, a: 0.02 }); [2093, 2637, 3136].forEach((f, i) => tone(f, 0.08, { gain: 0.04, when: 0.05 + i * 0.05, type: 'triangle' })); },
+    };
+    const STATE_SND = { idle: 'pop', listening: 'chime', thinking: 'pop', reply: 'reply', reminder: null, offline: 'offline', translating: 'pop', error: 'error', success: 'success', sleeping: 'lullaby' };
+    /** Play a named sound or an app event: play('state', {state}), play('land', {by, accessory}), play('boing') … */
+    function play(name, o = {}) {
+      if (muted || !ctx || ctx.state !== 'running') return;
+      if (name === 'state') { const s = STATE_SND[o.state]; if (s) S[s](); return; }
+      if (name === 'land') { if (o.by === 'accessory') { (o.accessory === 'holi' ? S.puff : S.boing)(); S.squish(); } else if (o.by === 'badge') S.bell(); else S.bounce(); return; }
+      if (name === 'flinch') { S.boing(); S.squish(); return; }
+      if (name === 'morphOpen') return S.whooshUp();
+      if (name === 'morphClose') return S.whooshDown();
+      if (name === 'insert' || name === 'send' || name === 'click') return S.tap();
+      if (name === 'accessory') return o.accessory ? S.drop() : S.pop();
+      if (name === 'move') return noise(0.2, { f: 600, to: 1800, q: 1.2, gain: 0.08, a: 0.06 });
+      if (S[name]) S[name]();
+    }
+    return {
+      unlock, play,
+      get muted() { return muted; }, get ready() { return !!ctx && ctx.state === 'running'; },
+      setMuted(m) { muted = !!m; if (master) master.gain.setTargetAtTime(muted ? 0 : volume, ctx.currentTime, 0.02); },
+    };
+  }
+  return { create };
+});
+
+</script>
+<script>
+(function () {
+'use strict';
+const K = AkayaBubbleKit, { Spring, STATES, STATE_ORDER, ACCESSORIES, BRAND } = K;
+const RECORD = /[?&]record=1/.test(location.search);
+const $ = s => document.querySelector(s);
+const app = $('#app'), stage = $('#stage'), cv = $('#cv');
+
+/* ---------------- bubbles ---------------- */
+const bubble = new K.AkayaBubble(cv, { size: 0.2, center: [0.5, 0.45], autoStart: false, interactive: !RECORD, seed: 11 });
+const mini = new K.AkayaBubble($('#mini'), { size: 0.27, center: [0.5, 0.5], autoStart: false, interactive: false, shadow: false, seed: 5 });
+const machine = AkayaStateMachine.create({ bubble, sleepAfter: RECORD ? 0 : 45000 });
+window.bubble = bubble; window.machine = machine;
+/* ---------------- sound: event log (used for the video mix) + live Web Audio SFX ---------------- */
+const LOG = []; window.__log = LOG;
+const sfx = AkayaSfx.create(); window.sfx = sfx;
+let rngA = 12345; const rnd = () => ((rngA = (rngA * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+function fx(type, extra = {}) { LOG.push(Object.assign({ t: +now.toFixed(4), type }, extra)); if (!RECORD) sfx.play(type, extra); }
+if (!RECORD) window.addEventListener('pointerdown', () => { sfx.unlock(); $('#btnSound').innerHTML = sfx.muted ? '🔇 Sound off' : '🔊 Sound on'; }, { once: true, capture: true });
+$('#btnSound').onclick = () => { sfx.unlock(); sfx.setMuted(!sfx.muted); const b = $('#btnSound'); b.classList.toggle('on', !sfx.muted); b.innerHTML = sfx.muted ? '🔇 Sound off' : '🔊 Sound on'; if (!sfx.muted) sfx.play('tap'); };
+bubble.on('statechange', ({ state, prev }) => { if (prev) fx('state', { state, prev }); });
+bubble.on('land', d => fx('land', { by: d.by, accessory: d.accessory || null, v: d.v ? +d.v.toFixed(2) : null }));
+bubble.on('bounce', d => fx('bounce', { v: +d.v.toFixed(2) }));
+bubble.on('tap', () => fx('flinch'));
+bubble.on('accessory', ({ accessory }) => fx('accessory', { accessory }));
+
+/* ---------------- copy for the panel ---------------- */
+const SAID = '🎙️ “राहुल को बोलो, मैं 11 बजे तक फ़ाइलें भेज दूँगी”';
+const DRAFT = "Hi Rahul! Sure, I'll send the files by 11 AM. 👍";
+const PANEL = {
+  idle:        ['Ready', '', 'Tap the mic and speak. I’ll write it for you.'],
+  listening:   ['Listening…', SAID, ''],
+  thinking:    ['Writing an English reply…', SAID, '• • •'],
+  reply:       ['English reply ✓', SAID, DRAFT],
+  reminder:    ['⏰ Reminder', 'Today · 11:30 AM', 'Meeting: project review with Rahul'],
+  offline:     ['Offline · on-device AI', '', 'No internet. On-device AI can still help with your reply.'],
+  translating: ['Translating…', 'हिन्दी → English: “नमस्ते! कल मिलते हैं।”', 'Hello! See you tomorrow.'],
+  error:       ['Didn’t catch that', '', 'Tap the mic and try again.'],
+  success:     ['Sent ✓', '', DRAFT],
+  sleeping:    ['Resting', '', 'Tap me to wake up.'],
+};
+function paintPanel(s) {
+  const [l, said, txt] = PANEL[s] || PANEL.idle;
+  const gc = K.STATES[s].glow.match(/\w\w/g).map(h => Math.round(parseInt(h, 16) * 0.55 + 255 * 0.45)); $('#card').style.setProperty('--c', `rgb(${gc})`);
+  $('#clbl').textContent = l; $('#csaid').textContent = said; $('#ctxt').textContent = txt;
+  $('#meter').style.display = s === 'listening' ? 'flex' : 'none'; $('#langs').style.display = s === 'translating' ? 'flex' : 'none';
+}
+$('#meter').innerHTML = '<i></i>'.repeat(14);
+
+/* ---------------- pills ---------------- */
+const glowOf = s => STATES[s].glow;
+const sp = $('#statePills');
+STATE_ORDER.forEach(s => { const b = document.createElement('button'); b.className = 'pill'; b.dataset.s = s; b.style.setProperty('--c', glowOf(s));
+  b.innerHTML = `<span class="d" style="background:${glowOf(s)};color:${glowOf(s)}"></span>${STATES[s].label}`;
+  b.onclick = () => { machine.force(s); api(`bubble.setState('${s}')`); }; sp.appendChild(b); });
+const ap = $('#accPills');
+[['santa', '🎅'], ['gradcap', '🎓'], ['diya', '🪔'], ['holi', '🎨'], [null, '✕']].forEach(([a, e]) => { const b = document.createElement('button'); b.className = 'pill'; b.dataset.a = a || '';
+  b.style.setProperty('--c', '#E8743B'); b.innerHTML = `<span>${e}</span>${a ? ACCESSORIES[a].label : 'None'}`; if (!a) b.classList.add('wide');
+  b.onclick = () => { bubble.setAccessory(a); mini.setAccessory(a); api(`bubble.setAccessory(${a ? `'${a}'` : 'null'})`); }; ap.appendChild(b); });
+function api(code) { $('#api').innerHTML = `<span class="k">// last call</span><br>${code.replace(/'([^']*)'/g, `<span class="s">'$1'</span>`)}<br><span class="k">// machine.state =</span> <span class="s">'${machine.state}'</span>`; }
+bubble.on('accessory', ({ accessory }) => document.querySelectorAll('#accPills .pill').forEach(p => p.classList.toggle('on', (p.dataset.a || null) === accessory && !!accessory)));
+
+/* ---------------- label + state change ---------------- */
+const labelPop = new Spring(1, { k: 380, z: 0.4 });
+bubble.on('statechange', ({ state }) => {
+  mini.setState(state);
+  const st = STATES[state]; $('#label .name span').textContent = st.label; $('#label .note').textContent = st.note;
+  $('#label').style.setProperty('--c', st.glow); labelPop.snap(0.82).set(1);
+  document.querySelectorAll('#statePills .pill').forEach(p => p.classList.toggle('on', p.dataset.s === state));
+  paintPanel(state); api(`bubble.setState('${state}')`);
+});
+bubble.on('tap', () => { machine.send('TAP'); });
+bubble.on('stageclick', ({ x, y }) => { fx('move'); bubble.moveToPoint(x, y); api(`bubble.moveToPoint(${x | 0}, ${y | 0})`); });
+// the state machine already set 'idle' before listeners existed; sync the UI once
+(function () { const s = bubble.state; bubble.state = null; bubble.setState(s, { instant: true }); })();
+
+/* ---------------- morph: floating button ⇄ panel ---------------- */
+const FAB = { x: 228, y: 318, w: 52, h: 52, r: 26 }, PAN = { x: 10, y: 176, w: 272, h: 322, r: 20 };
+const mw = new Spring(0, { k: 210, z: 0.6 }), mh = new Spring(0, { k: 150, z: 0.62 }), fly = new Spring(0, { k: 210, z: 0.5 });
+let open = false, morphTimers = [];
+const ORANGE = [232, 116, 59], NAVY = [20, 26, 51];
+function setOpen(v) {
+  if (open !== v) fx(v ? 'morphOpen' : 'morphClose'); open = v; morphTimers.forEach(clearT); morphTimers = [];
+  $('#btnMorph').classList.toggle('on', v);
+  if (v) { mw.set(1); morphTimers.push(later(0.05, () => mh.set(1)), later(0.12, () => { fly.set(1); mini.hop(2.4, 0); })); }
+  else { fly.set(0); morphTimers.push(later(0.12, () => { mh.set(0); }), later(0.18, () => mw.set(0))); }
+  api(v ? 'panel.open()  // button morphs into the panel' : 'panel.close() // panel folds back into the button');
+}
+$('#btnMorph').onclick = () => setOpen(!open);
+$('#pclose').onclick = e => { e.stopPropagation(); setOpen(false); };
+$('#morph').addEventListener('click', e => { if (!open) setOpen(true); });
+$('#insertBtn').onclick = () => insertDraft();
+$('#sendBtn').onclick = () => sendDraft();
+function insertDraft() { fx('insert'); const f = $('#field'); f.textContent = DRAFT; f.classList.add('filled'); }
+function sendDraft() {
+  const f = $('#field'); if (!f.classList.contains('filled')) return; fx('send');
+  const m = document.createElement('div'); m.className = 'm out'; m.innerHTML = `${DRAFT}<small>10:30 AM ✓✓</small>`; $('#msgs').appendChild(m);
+  outPop.snap(0.4).set(1); outEl = m; f.textContent = 'Message'; f.classList.remove('filled'); machine.send('SEND'); api(`machine.send('SEND')  // reply → success`);
+}
+let outEl = null; const outPop = new Spring(1, { k: 300, z: 0.5 });
+function paintMorph() {
+  const a = Math.max(0, mw.v), b = Math.max(0, mh.v), m = Math.min(a, b);
+  const x = FAB.x + (PAN.x - FAB.x) * a, w = FAB.w + (PAN.w - FAB.w) * a;
+  const y = FAB.y + (PAN.y - FAB.y) * b, h = FAB.h + (PAN.h - FAB.h) * b, r = FAB.r + (PAN.r - FAB.r) * m;
+  const el = $('#morph'); el.style.left = x + 'px'; el.style.top = y + 'px'; el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.borderRadius = r + 'px';
+  const k = Math.min(1, m * 2.4), VIO = [118, 37, 239], col = k < 0.5 ? ORANGE.map((o, i) => Math.round(o + (VIO[i] - o) * k * 2)) : VIO.map((o, i) => Math.round(o + (NAVY[i] - o) * (k - 0.5) * 2));
+  const g = K.STATES[bubble.state].glow;
+  el.style.background = `rgb(${col})`;
+  el.style.boxShadow = `0 0 0 ${3 * (1 - k)}px ${g}, 0 0 ${22 * (1 - k) + 4}px ${g}88, 0 14px 30px -10px rgba(10,14,40,.55)`;
+  $('#spark').style.opacity = Math.max(0, 1 - m * 4); $('#spark').style.transform = `translate(-50%,-50%) rotate(${m * 120}deg) scale(${1 - Math.min(1, m * 3) * 0.5})`;
+  const pc = $('#pc'); pc.style.left = (PAN.x - x) + 'px'; pc.style.top = (PAN.y - y) + 'px'; pc.style.opacity = Math.max(0, Math.min(1, (m - 0.55) / 0.35));
+  // the bubble lives inside the button and pops out into the panel header
+  const q = Math.max(0, fly.v), fx = FAB.x + FAB.w / 2, fy = FAB.y + FAB.h / 2, tx = PAN.x + 38, ty = PAN.y + 22;
+  const mx = fx + (tx - fx) * q, my = fy + (ty - fy) * q - Math.sin(Math.min(1, q) * Math.PI) * 40;
+  const mc = $('#mini'); mc.style.left = (mx - 38) + 'px'; mc.style.top = (my - 38) + 'px'; mc.style.transform = `scale(${Math.min(1.15, q)})`; mc.style.opacity = q < 0.05 ? 0 : 1;
+  if (outEl) outEl.style.transform = `scale(${outPop.v})`;
+  $('#label').style.transform = `scale(${labelPop.v})`;
+}
+
+/* ---------------- mic level (simulated, or real with "Use my mic") ---------------- */
+let micAnalyser = null, micBuf = null;
+$('#btnMic').onclick = async () => {
+  try { const s = await navigator.mediaDevices.getUserMedia({ audio: true }); const ac = new AudioContext(); micAnalyser = ac.createAnalyser(); micAnalyser.fftSize = 1024;
+    ac.createMediaStreamSource(s).connect(micAnalyser); micBuf = new Float32Array(micAnalyser.fftSize); $('#btnMic').classList.add('on'); machine.force('listening'); api(`bubble.setLevel(rms)  // live mic`); }
+  catch (e) { $('#btnMic').textContent = '🎙 Mic blocked'; }
+};
+function levelAt(t) {
+  if (micAnalyser) { micAnalyser.getFloatTimeDomainData(micBuf); let s = 0; for (const v of micBuf) s += v * v; return Math.min(1, Math.sqrt(s / micBuf.length) * 6); }
+  const syll = Math.abs(Math.sin(t * 6.1)) * Math.abs(Math.sin(t * 1.9 + 0.7)), gap = (Math.sin(t * 0.9) > -0.6) ? 1 : 0.15;
+  return Math.min(1, 0.12 + syll * 0.95 * gap + 0.08 * Math.sin(t * 23));
+}
+
+/* ---------------- clock, timers, fake cursor ---------------- */
+let now = 0; const timers = []; let tid = 1;
+function later(sec, fn) { const id = tid++; timers.push({ id, at: now + sec, fn }); return id; }
+function clearT(id) { const i = timers.findIndex(t => t.id === id); if (i >= 0) timers.splice(i, 1); }
+const cur = { x: new Spring(640, { k: 110, z: 0.95 }), y: new Spring(500, { k: 110, z: 0.95 }), on: false };
+const appRect = () => app.getBoundingClientRect();
+function centerOf(el, fx = 0.5, fy = 0.5) { const r = el.getBoundingClientRect(), a = appRect(); return [r.left - a.left + r.width * fx, r.top - a.top + r.height * fy]; }
+function cursorTo(x, y) { cur.on = true; $('#cursor').style.display = 'block'; cur.x.set(x); cur.y.set(y); }
+function stagePt(fx, fy) { const [x, y] = centerOf(stage, 0, 0); return [x + stage.clientWidth * fx, y + stage.clientHeight * fy]; }
+function bubblePt(ox = 0, oy = 0) { const [x, y] = centerOf(stage, 0, 0); return [x + bubble._cx + ox * bubble.rx, y + bubble._cy + oy * bubble.rx]; }
+function ripple() { const r = document.createElement('div'); r.className = 'ripple'; r.style.left = cur.x.v + 'px'; r.style.top = cur.y.v + 'px'; app.appendChild(r);
+  const s = new Spring(0.3, { k: 120, z: 1 }).set(1.6); ripples.push({ el: r, s, t: 0 }); }
+const ripples = [];
+function clickAt(fn) { ripple(); fn && fn(); }
+function stageLocal() { const [sx, sy] = centerOf(stage, 0, 0); return [cur.x.v - sx, cur.y.v - sy]; }
+
+/* ---------------- the tour (also used for the recording) ---------------- */
+const go = (...evs) => { evs.forEach(e => machine.send(e)); api(evs.map(e => `machine.send('${e}')`).join('\n<br>')); };
+const pillEl = sel => document.querySelector(sel);
+const TOUR = [
+  [0.2, () => cursorTo(...stagePt(0.16, 0.24))],
+  [1.0, () => cursorTo(...stagePt(0.84, 0.28))],
+  [1.75, () => cursorTo(...stagePt(0.78, 0.62))],
+  [2.15, () => clickAt(() => { const [x, y] = stageLocal(); fx('move'); bubble.moveToPoint(x, y); api(`bubble.moveToPoint(${x | 0}, ${y | 0})`); })],
+  [2.6, () => cursorTo(...stagePt(0.5, 0.42))],
+  [3.0, () => clickAt(() => { fx('move'); bubble.moveTo(0, 0); api('bubble.moveTo(0, 0)  // home'); })],
+  [3.35, () => cursorTo(...bubblePt(-0.55, -0.2))],
+  [3.9, () => clickAt(() => { const [x, y] = stageLocal(); bubble.tapAt(x, y); api(`bubble.tapAt(${x | 0}, ${y | 0})  // flinch`); })],
+  [4.4, () => cursorTo(...centerOf($('#morph')))],
+  [5.0, () => clickAt(() => setOpen(true))],
+  [5.4, () => go('MIC_ON')],
+  [5.6, () => cursorTo(...stagePt(0.84, 0.7))],
+  [7.6, () => go('SPEECH_END')],
+  [9.2, () => go('DRAFT_READY')],
+  [9.6, () => cursorTo(...centerOf($('#insertBtn')))],
+  [10.3, () => clickAt(() => { insertDraft(); setOpen(false); api('panel.insert(draft)  // into the chat box, panel folds away'); })],
+  [10.6, () => cursorTo(...centerOf($('#sendBtn')))],
+  [11.2, () => clickAt(() => sendDraft())],
+  [11.7, () => cursorTo(...centerOf($('#morph')))],
+  [12.6, () => clickAt(() => setOpen(true))],
+  [13.1, () => go('TRANSLATE')],
+  [13.3, () => cursorTo(...stagePt(0.78, 0.3))],
+  [15.4, () => go('CANCEL', 'REMINDER')],
+  [16.3, () => cursorTo(...centerOf($('#pclose')))],
+  [17.0, () => clickAt(() => { setOpen(false); go('DISMISS'); })],
+  [17.4, () => go('NETWORK_OFF')],
+  [17.6, () => cursorTo(...stagePt(0.25, 0.7))],
+  [19.3, () => go('ERROR')],
+  [20.5, () => cursorTo(...centerOf(pillEl('#accPills [data-a="santa"]')))],
+  [20.7, () => go('DISMISS', 'NETWORK_ON')],
+  [21.1, () => clickAt(() => pillEl('#accPills [data-a="santa"]').click())],
+  [21.9, () => cursorTo(...centerOf(pillEl('#accPills [data-a="gradcap"]')))],
+  [22.4, () => clickAt(() => pillEl('#accPills [data-a="gradcap"]').click())],
+  [23.2, () => cursorTo(...centerOf(pillEl('#accPills [data-a="diya"]')))],
+  [23.7, () => clickAt(() => pillEl('#accPills [data-a="diya"]').click())],
+  [24.5, () => cursorTo(...centerOf(pillEl('#accPills [data-a="holi"]')))],
+  [25.0, () => clickAt(() => pillEl('#accPills [data-a="holi"]').click())],
+  [25.7, () => cursorTo(...stagePt(0.9, 0.8))],
+  [26.1, () => go('IDLE_TIMEOUT')],
+  [27.6, () => cursorTo(...bubblePt(0.5, -0.1))],
+  [28.2, () => clickAt(() => { const [x, y] = stageLocal(); bubble.tapAt(x, y); api(`bubble.tapAt(${x | 0}, ${y | 0})  // wakes up`); })],
+  [28.7, () => cursorTo(...stagePt(0.82, 0.3))],
+];
+let tourT = -1, tourI = 0;
+function playTour() { tourT = 0; tourI = 0; $('#btnTour').classList.add('on'); }
+$('#btnTour').onclick = () => { if (open) setOpen(false); machine.force('idle'); bubble.setAccessory(null); mini.setAccessory(null); playTour(); };
+
+/* ---------------- main loop ---------------- */
+let lvT = 0, perState = null, perNext = 0;
+function frame(dt) {
+  now += dt;
+  const due = timers.filter(t => t.at <= now); due.forEach(t => clearT(t.id)); due.forEach(t => t.fn());
+  if (tourT >= 0) { tourT += dt; while (tourI < TOUR.length && TOUR[tourI][0] <= tourT) TOUR[tourI++][1](); if (tourI >= TOUR.length && tourT > 30) { tourT = -1; $('#btnTour').classList.remove('on'); } }
+  if (cur.on) { for (let i = 0; i < 4; i++) { cur.x.step(dt / 4); cur.y.step(dt / 4); }
+    const c = $('#cursor'); c.style.transform = `translate(${cur.x.v - 4}px, ${cur.y.v - 2}px)`;
+    const [lx, ly] = stageLocal(); bubble.lookAt(lx, ly);
+    const [mx, my] = centerOf($('#mini'), 0, 0); mini.lookAt(cur.x.v - mx, cur.y.v - my); }
+  // periodic sounds while in a state
+  const S = bubble.state;
+  if (S !== perState) { perState = S; perNext = now + (S === 'sleeping' ? 0.9 : 0.25); }
+  if (now >= perNext) {
+    if (S === 'thinking') { fx('typing'); perNext = now + 0.07 + rnd() * 0.11; }
+    else if (S === 'translating') { fx('blip'); perNext = now + 0.14 + rnd() * 0.16; }
+    else if (S === 'sleeping') { fx('snore'); perNext = now + 2.9; }
+    else perNext = now + 0.25;
+  }
+  lvT += dt; const lv = bubble.state === 'listening' ? levelAt(lvT) : 0; bubble.setLevel(lv); mini.setLevel(lv);
+  if (bubble.state === 'listening') $('#meter').querySelectorAll('i').forEach((el, i) => el.style.height = (4 + 18 * Math.max(0, Math.min(1, lv * (0.55 + 0.45 * Math.sin(lvT * 9 + i * 1.3))))) + 'px');
+  for (let i = 0; i < 4; i++) [mw, mh, fly, outPop, labelPop].forEach(s => s.step(dt / 4));
+  for (const r of ripples) { r.t += dt; r.s.step(dt); r.el.style.transform = `scale(${r.s.v})`; r.el.style.opacity = Math.max(0, 1 - r.t / 0.45); if (r.t > 0.5) r.el.remove(); }
+  bubble.tick(dt); mini.tick(dt); paintMorph();
+}
+paintPanel('idle'); api(`bubble.setState('idle')`);
+window.__advance = ms => frame(ms / 1000);
+const linkReady = new Promise(r => { const l = document.querySelector('link[rel=stylesheet]'); if (!l) return r(); l.addEventListener('load', r); l.addEventListener('error', r); setTimeout(r, 4000); });
+const fontsReady = linkReady.then(() => document.fonts.ready).then(() => Promise.all([document.fonts.load('700 20px Comfortaa'), document.fonts.load('700 13px Manrope'), document.fonts.load('700 13px "Noto Sans Devanagari"', 'नमस्ते'),
+  document.fonts.load('700 13px "Noto Sans CJK JP"', 'こんにちは'), document.fonts.load('700 13px "Noto Sans Tamil"', 'வணக்கம்'), document.fonts.load('700 13px "Noto Sans Arabic"', 'مرحبا')])).catch(() => {});
+fontsReady.then(() => {
+  frame(0.001);
+  if (RECORD) { playTour(); window.READY = true; }
+  else { let last = performance.now(); const loop = t => { frame(Math.min(0.05, (t - last) / 1000)); last = t; requestAnimationFrame(loop); }; requestAnimationFrame(loop); window.READY = true;
+    if (/[?&]tour=1/.test(location.search)) playTour(); }
+});
+})();
+</script>
+</body>
+</html>

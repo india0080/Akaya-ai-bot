@@ -1,0 +1,1195 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Akaya Grocery Agent API",
+    "version": "0.1.0",
+    "description": "Parses grocery lists (English / Hindi / Hinglish), compares Swiggy Instamart, Blinkit, Zepto, BigBasket and Amazon Fresh, builds the cheapest / fastest / split basket, fills the cart and notifies the user to pay. **Never pays**: the user pays in the store app (UPI / card / OTP). Store providers run on Mock (SAMPLE data) until a Playwright session or partnership API is configured."
+  },
+  "components": {
+    "schemas": {}
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Health check",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/providers": {
+      "get": {
+        "summary": "Store providers: Mock (sample) vs Playwright (your session)",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/stores": {
+      "get": {
+        "summary": "Stores",
+        "tags": [
+          "meta"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/parse": {
+      "post": {
+        "summary": "Parse a grocery list (EN / HI / Hinglish)",
+        "tags": [
+          "lists"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/quotes": {
+      "post": {
+        "summary": "Compare stores and build optimized baskets (job)",
+        "tags": [
+          "quotes"
+        ],
+        "description": "Send `text` or edited `items`. Stream progress at /api/jobs/{id}/events, or pass `wait: true`.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "description": "free-text list, e.g. \"2 kg aata, 1 L Amul milk, 6 eggs\"",
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "items": {
+                    "description": "already-parsed (and possibly edited) items",
+                    "maxItems": 60,
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "raw": {
+                          "type": "string"
+                        },
+                        "key": {
+                          "type": "string",
+                          "description": "catalogue item key, e.g. \"atta\""
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "emoji": {
+                          "type": "string"
+                        },
+                        "qty": {
+                          "type": "number",
+                          "description": "in base units (g / ml / pc)"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "g",
+                            "ml",
+                            "pc"
+                          ]
+                        },
+                        "display": {
+                          "type": "string",
+                          "description": "human quantity, e.g. \"2 kg\""
+                        },
+                        "brand": {
+                          "type": "string"
+                        },
+                        "variant": {
+                          "description": "pack-name preference, e.g. \"Mustard\"",
+                          "type": "string"
+                        },
+                        "confidence": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "raw",
+                        "key",
+                        "name",
+                        "emoji",
+                        "qty",
+                        "unit",
+                        "display",
+                        "confidence"
+                      ]
+                    }
+                  },
+                  "pincode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "budget": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "stores": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "instamart",
+                        "blinkit",
+                        "zepto",
+                        "bigbasket",
+                        "amazonfresh"
+                      ]
+                    }
+                  },
+                  "wait": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {}
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {}
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/quotes/{id}": {
+      "get": {
+        "summary": "A finished quote (plans, per-store quotes)",
+        "tags": [
+          "quotes"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/jobs/{id}": {
+      "get": {
+        "summary": "Job status",
+        "tags": [
+          "jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "queued",
+                        "running",
+                        "done",
+                        "failed"
+                      ]
+                    },
+                    "progress": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "result": {}
+                  },
+                  "required": [
+                    "id",
+                    "type",
+                    "status",
+                    "progress"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/jobs/{id}/events": {
+      "get": {
+        "summary": "SSE job progress (progress · status · done)",
+        "tags": [
+          "jobs"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/checkouts": {
+      "post": {
+        "summary": "Fill store cart(s) for a plan (no payment)",
+        "tags": [
+          "checkout"
+        ],
+        "description": "Creates one cart per store and fills it via the provider. Notifies \"ready to pay\" when done. Never pays.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "quoteId": {
+                    "type": "string"
+                  },
+                  "planId": {
+                    "type": "string"
+                  },
+                  "overrides": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "itemId": {
+                          "type": "string"
+                        },
+                        "store": {
+                          "type": "string",
+                          "enum": [
+                            "instamart",
+                            "blinkit",
+                            "zepto",
+                            "bigbasket",
+                            "amazonfresh"
+                          ]
+                        },
+                        "skuId": {
+                          "type": "string"
+                        },
+                        "packs": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 50
+                        }
+                      },
+                      "required": [
+                        "itemId",
+                        "store",
+                        "skuId",
+                        "packs"
+                      ]
+                    }
+                  },
+                  "removed": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "quoteId",
+                  "planId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "get": {
+        "summary": "Checkouts",
+        "tags": [
+          "checkout"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/checkouts/{id}": {
+      "get": {
+        "summary": "Checkout status",
+        "tags": [
+          "checkout"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/checkouts/{id}/carts/{store}/handoff": {
+      "post": {
+        "summary": "Confirm: get the store app / web link to pay yourself",
+        "tags": [
+          "checkout"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "instamart",
+                "blinkit",
+                "zepto",
+                "bigbasket",
+                "amazonfresh"
+              ]
+            },
+            "in": "path",
+            "name": "store",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/checkouts/{id}/carts/{store}/paid": {
+      "post": {
+        "summary": "User confirms they paid in the store app (starts tracking)",
+        "tags": [
+          "checkout"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userConfirmed": {
+                    "type": "boolean",
+                    "enum": [
+                      true
+                    ]
+                  }
+                },
+                "required": [
+                  "userConfirmed"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "instamart",
+                "blinkit",
+                "zepto",
+                "bigbasket",
+                "amazonfresh"
+              ]
+            },
+            "in": "path",
+            "name": "store",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/checkouts/{id}/cancel": {
+      "post": {
+        "summary": "Cancel (all carts or one store)",
+        "tags": [
+          "checkout"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "store": {
+                    "type": "string",
+                    "enum": [
+                      "instamart",
+                      "blinkit",
+                      "zepto",
+                      "bigbasket",
+                      "amazonfresh"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "summary": "Orders with tracking (simulated for Mock)",
+        "tags": [
+          "orders"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/orders/{id}": {
+      "get": {
+        "summary": "Order tracking",
+        "tags": [
+          "orders"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/lists": {
+      "get": {
+        "summary": "Saved lists",
+        "tags": [
+          "lists"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "post": {
+        "summary": "Save a list (optional budget + weekly schedule)",
+        "tags": [
+          "lists"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "emoji": {
+                    "type": "string",
+                    "maxLength": 8
+                  },
+                  "budget": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "days": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        }
+                      },
+                      "time": {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}$"
+                      },
+                      "strategy": {
+                        "type": "string",
+                        "enum": [
+                          "cheapest",
+                          "fastest",
+                          "split",
+                          "balanced"
+                        ]
+                      },
+                      "autoFill": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "days",
+                      "time",
+                      "strategy",
+                      "autoFill"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/lists/{id}": {
+      "patch": {
+        "summary": "Update a list",
+        "tags": [
+          "lists"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 60
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "emoji": {
+                    "type": "string",
+                    "maxLength": 8
+                  },
+                  "budget": {
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "schedule": {
+                    "type": "object",
+                    "properties": {
+                      "enabled": {
+                        "type": "boolean"
+                      },
+                      "days": {
+                        "type": "array",
+                        "items": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 6
+                        }
+                      },
+                      "time": {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}$"
+                      },
+                      "strategy": {
+                        "type": "string",
+                        "enum": [
+                          "cheapest",
+                          "fastest",
+                          "split",
+                          "balanced"
+                        ]
+                      },
+                      "autoFill": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "enabled",
+                      "days",
+                      "time",
+                      "strategy",
+                      "autoFill"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a list",
+        "tags": [
+          "lists"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/lists/{id}/run": {
+      "post": {
+        "summary": "Run a list now (quote, and fill cart if autoFill)",
+        "tags": [
+          "lists"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "autoFill": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "path",
+            "name": "id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "summary": "Delivery address, budget, stores, default strategy",
+        "tags": [
+          "settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update settings",
+        "tags": [
+          "settings"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pincode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  },
+                  "address": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "budget": {
+                    "nullable": true,
+                    "type": "number",
+                    "minimum": 0,
+                    "exclusiveMinimum": true
+                  },
+                  "stores": {
+                    "minItems": 1,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "instamart",
+                        "blinkit",
+                        "zepto",
+                        "bigbasket",
+                        "amazonfresh"
+                      ]
+                    }
+                  },
+                  "strategy": {
+                    "type": "string",
+                    "enum": [
+                      "cheapest",
+                      "fastest",
+                      "split",
+                      "balanced"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "summary": "In-app notifications",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "post": {
+        "summary": "Mark read",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/stream": {
+      "get": {
+        "summary": "SSE stream (event: notification)",
+        "tags": [
+          "notifications"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "user",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/subscribe": {
+      "post": {
+        "summary": "Register Web Push / FCM token (delivery stub until keys are set)",
+        "tags": [
+          "notifications"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "webpush",
+                      "fcm"
+                    ]
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 10
+                  }
+                },
+                "required": [
+                  "kind",
+                  "token"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    },
+    "/api/notifications/test": {
+      "post": {
+        "summary": "Send a test notification",
+        "tags": [
+          "notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "Default Response"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8788"
+    }
+  ],
+  "tags": [
+    {
+      "name": "lists"
+    },
+    {
+      "name": "quotes"
+    },
+    {
+      "name": "jobs"
+    },
+    {
+      "name": "checkout"
+    },
+    {
+      "name": "orders"
+    },
+    {
+      "name": "settings"
+    },
+    {
+      "name": "notifications"
+    },
+    {
+      "name": "meta"
+    }
+  ]
+}

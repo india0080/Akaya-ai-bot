@@ -1,0 +1,27 @@
+# docker compose up --build  →  UI http://localhost:5174 · API http://localhost:8787/docs
+# Uses .env if present (copy .env.example). With no keys it runs on the Mock provider (sample data).
+services:
+  api:
+    build: ./backend
+    ports: ['8787:8787']
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8787
+      DATA_FILE: /data/db.json
+    volumes: ['shopping-data:/data']
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8787/api/health']
+      interval: 10s
+      retries: 5
+  web:
+    build: ./frontend
+    ports: ['5174:80']
+    depends_on: [api]
+  # Production: swap the in-memory cache/queue for Redis (see docs/ARCHITECTURE.md)
+  # redis:
+  #   image: redis:7-alpine
+volumes:
+  shopping-data:

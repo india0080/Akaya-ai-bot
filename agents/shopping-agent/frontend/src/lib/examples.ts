@@ -1,0 +1,1 @@
+export const EXAMPLES = ['school bag under 1500', '1500 se kam ka basta, jaldi chahiye', 'wireless earbuds 4 star', 'running shoes under 3k on flipkart', 'sabse sasta power bank', '१५०० से कम का बस्ता'];

@@ -1,0 +1,30 @@
+.statusbar {
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 26px 0 32px;
+  font-weight: 700;
+  font-size: 15px;
+  position: relative;
+  z-index: 30;
+  color: var(--text);
+}
+.sb-r {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.bat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 13px;
+  border-radius: 4px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 9px;
+  font-weight: 800;
+}

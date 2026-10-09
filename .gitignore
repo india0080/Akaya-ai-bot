@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-standalone/
+dev-dist/
+coverage/
+.vite/
+*.tsbuildinfo
+*.local
+.env
+.env.*
+!.env.example
+secrets/
+agents/*/backend/data/*.json
+.DS_Store
+*.log

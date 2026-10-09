@@ -1,0 +1,150 @@
+.more-head {
+  padding: 8px 20px 4px;
+}
+.more-head h2 {
+  font-size: 1.3rem;
+}
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 8px 16px 0;
+  padding: 14px;
+  border-radius: 24px;
+}
+.profile b {
+  font-family: var(--font-head);
+  font-size: 1.1rem;
+  display: block;
+}
+.profile small {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--text-2);
+  margin: 2px 0 6px;
+}
+.upgrade-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  border-radius: 22px;
+  width: calc(100% - 32px);
+  color: #fff;
+  text-align: left;
+  background: linear-gradient(120deg, #ff9a5c, #e8743b 45%, #7625ef);
+  box-shadow: 0 14px 28px -14px rgba(232, 116, 59, 0.8);
+}
+.upgrade-banner b {
+  display: block;
+  font-size: 0.92rem;
+}
+.upgrade-banner small {
+  font-size: 0.7rem;
+  opacity: 0.92;
+}
+.links {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 12px 16px 0;
+}
+.link-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 4px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 0.72rem;
+}
+.set-h {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  margin: 22px 22px 8px;
+}
+.set-card {
+  margin: 0 16px;
+  padding: 4px 0;
+  border-radius: 22px;
+}
+.set-card .list {
+  margin: 0;
+}
+.set-block {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.set-block:last-child {
+  border-bottom: 0;
+}
+.set-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 9px;
+}
+.set-hint {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-2);
+  margin-top: 8px;
+}
+.ts-preview {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  margin-top: 10px;
+}
+.test-voice {
+  margin-top: 12px;
+}
+.set-row b {
+  font-size: 0.84rem;
+}
+.mini-select {
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-weight: 700;
+  font-size: 0.74rem;
+  outline: none;
+}
+.version {
+  text-align: center;
+  font-size: 0.68rem;
+  margin: 22px 0 8px;
+}
+.more-apps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  width: calc(100% - 32px);
+  border-radius: 22px;
+  text-align: left;
+  color: var(--text);
+}
+.more-apps b {
+  display: block;
+  font-size: 0.92rem;
+}
+.more-apps small {
+  font-size: 0.72rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+.ma-stack {
+  display: flex;
+}
+.ma-stack .app-tile {
+  border: 2px solid var(--surface-solid);
+  margin-left: -9px;
+}

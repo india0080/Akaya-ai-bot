@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.png binary
+*.mp4 binary
+*.jpg binary
+# To move media to Git LFS later:
+# marketing/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+# design/**/*.png filter=lfs diff=lfs merge=lfs -text
