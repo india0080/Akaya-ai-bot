@@ -10,7 +10,8 @@ Connect apps (mail, calendar, chat, docs and so on) so Akaya can act in them.
 | `app/src/integrations/providers/` | `MockProvider` (default), `BackendProvider`, `ComposioProvider`, `NangoProvider` |
 | `app/src/integrations/catalog.ts, types.ts` | App catalogue, categories and types |
 | `app/src/screens/Apps.tsx, app/src/screens/apps/AppSheet.tsx` | Apps screen and per-app connect sheet |
-| `app/src/components/AppTile.tsx` | App tile |
+| `app/src/components/AppTile.tsx` | App tile (brand logo on a white tile; monogram fallback) |
+| `app/scripts/gen-logos.mjs`, `logo-map.json` | Generates `logos.generated.ts` from CC0/MIT/Apache icon sets (`npm run logos`) |
 
 ## Status
 

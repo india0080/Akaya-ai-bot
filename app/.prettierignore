@@ -2,3 +2,5 @@ dist
 dist-standalone
 node_modules
 android
+src/integrations/logos.generated.ts
+scripts/logo-report.json

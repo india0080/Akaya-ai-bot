@@ -29,6 +29,7 @@ import { Apps } from './screens/Apps';
 import { VoiceNotes } from './screens/vnotes/VoiceNotes';
 import { Recorder } from './screens/vnotes/Recorder';
 import { NoteView } from './screens/vnotes/NoteView';
+import { FutureScheduler } from './future/FutureScheduler';
 
 const TAB_PATHS = ['/home', '/chat', '/voice', '/history', '/more'];
 
@@ -68,6 +69,7 @@ export function App() {
         <DeviceHostContext.Provider value={device}>
           <ToastProvider>
             {showStatus ? <StatusBar /> : <div className="safe-top" />}
+            {state.auth.signedIn && <FutureScheduler />}
             <Routes>
               <Route path="/" element={<Navigate to={start} replace />} />
               <Route path="/signup" element={state.auth.signedIn ? <Navigate to={start} replace /> : <SignUp />} />

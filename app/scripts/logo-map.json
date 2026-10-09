@@ -1,0 +1,103 @@
+{
+  "outlook": "thesvg-color:microsoft-outlook",
+  "outlook-calendar": "thesvg-color:outlook-calendar",
+  "yahoo-mail": [
+    "si:yahoo",
+    "cib:yahoo"
+  ],
+  "zoho-mail": "thesvg-color:zohomail",
+  "zoho-projects": "thesvg-color:zoho",
+  "zoho-crm": "thesvg-color:zoho",
+  "zoho-books": "thesvg-color:zoho",
+  "zoho-desk": "thesvg-color:zoho",
+  "zoho-people": "thesvg-color:zoho",
+  "zoho-calendar": "thesvg-color:zoho",
+  "whatsapp-business": "logos:whatsapp-icon",
+  "teams": "thesvg-color:microsoft-teams",
+  "cal-com": "thesvg-color:cal-com",
+  "onenote": "thesvg-color:microsoft-onenote",
+  "word": "thesvg-color:microsoft-word",
+  "excel": "thesvg-color:microsoft-excel",
+  "powerpoint": "thesvg-color:microsoft-powerpoint",
+  "onedrive": "thesvg-color:microsoft-onedrive",
+  "sharepoint": "thesvg-color:microsoft-sharepoint",
+  "microsoft-todo": "thesvg-color:microsoft-todo",
+  "microsoft-planner": "thesvg-color:microsoft-planner",
+  "dynamics-365": "thesvg-color:microsoft-dynamics-365",
+  "microsoft-forms": "none",
+  "paytm-business": [
+    "thesvg-color:paytm",
+    "si:paytm"
+  ],
+  "phonepe-business": [
+    "thesvg-color:phonepe",
+    "si:phonepe"
+  ],
+  "ola": "thesvg-color:ola-cabs",
+  "amazon": [
+    "thesvg-color:amazon",
+    "cib:amazon"
+  ],
+  "amazon-seller": [
+    "thesvg-color:amazon",
+    "cib:amazon"
+  ],
+  "makemytrip": "thesvg-color:makemytrip",
+  "bigbasket": "thesvg-color:bigbasket",
+  "canva": [
+    "thesvg-color:canva",
+    "cib:canva"
+  ],
+  "icloud": [
+    "thesvg-color:icloud",
+    "si:icloud"
+  ],
+  "icloud-mail": [
+    "thesvg-color:icloud",
+    "si:icloud"
+  ],
+  "docusign": "thesvg-color:docusign",
+  "adobe-acrobat": "thesvg-color:acrobat-reader",
+  "booking": "si:bookingdotcom",
+  "walmart": "thesvg-color:walmart",
+  "workday": "thesvg-color:workday",
+  "rippling": "thesvg-color:rippling",
+  "attio": "thesvg-color:attio",
+  "gong": "thesvg-color:gong",
+  "constant-contact": "thesvg-color:constant-contact",
+  "beehiiv": "thesvg-color:beehiiv",
+  "meta-ads": [
+    "logos:meta-icon",
+    "thesvg-color:meta"
+  ],
+  "front": "thesvg-color:front",
+  "aircall": "thesvg-color:aircall",
+  "formstack": "thesvg-color:formstack",
+  "apple-calendar": "logos:apple",
+  "apple-notes": "logos:apple",
+  "apple-reminders": "logos:apple",
+  "apple-shortcuts": "logos:apple",
+  "imessage": "logos:apple",
+  "apple-music": [
+    "thesvg-color:apple-music",
+    "si:applemusic"
+  ],
+  "apple-podcasts": [
+    "thesvg-color:apple-podcasts",
+    "si:applepodcasts"
+  ],
+  "google-messages": [
+    "thesvg-color:google-messages",
+    "si:googlemessages"
+  ],
+  "x": [
+    "logos:x",
+    "si:x"
+  ],
+  "bamboohr": "none",
+  "close": "none",
+  "apollo": "none",
+  "tally-forms": "none",
+  "monday": "logos:monday-icon",
+  "dialpad": "none"
+}

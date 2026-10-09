@@ -8,7 +8,7 @@ import { uid } from '../lib/time';
 import { auth } from '../auth';
 import type { Connection } from '../integrations/types';
 import type { VoiceNote } from '../notes/types';
-import type { Activity, AppState, Chat, FutureMessage, Note, Settings, TodayItem } from './types';
+import type { Activity, AppState, Attachment, Chat, ChatMode, FutureMessage, Note, Settings, TodayItem } from './types';
 
 export const STORAGE_KEY = 'akaya:v1';
 
@@ -59,14 +59,31 @@ function useAppStore() {
         patch((s) => ({ ...s, notes: [{ id: uid(), text, color, createdAt: Date.now() }, ...s.notes] })),
       deleteNote: (id: string) => patch((s) => ({ ...s, notes: s.notes.filter((n) => n.id !== id) })),
 
-      scheduleMessage: (m: Omit<FutureMessage, 'id' | 'status'>) =>
+      /** schedules a message and returns its id */
+      scheduleMessage: (m: Omit<FutureMessage, 'id' | 'status'>): string => {
+        const id = uid();
         patch((s) => ({
           ...s,
-          future: [...s.future, { ...m, id: uid(), status: 'scheduled' as const, createdAt: Date.now() }].sort(
+          future: [...s.future, { ...m, id, status: 'scheduled' as const, createdAt: Date.now() }].sort(
             (a, b) => a.when - b.when,
           ),
+        }));
+        return id;
+      },
+      updateMessage: (id: string, fn: (m: FutureMessage) => FutureMessage) =>
+        patch((s) => ({
+          ...s,
+          future: s.future.map((m) => (m.id === id ? fn(m) : m)).sort((a, b) => a.when - b.when),
         })),
       cancelMessage: (id: string) => patch((s) => ({ ...s, future: s.future.filter((m) => m.id !== id) })),
+      notify: (title: string, body: string, icon = 'future') =>
+        patch((s) => ({
+          ...s,
+          notifications: [{ id: uid(), title, body, at: Date.now(), read: false, icon }, ...s.notifications].slice(
+            0,
+            60,
+          ),
+        })),
 
       /** creates a chat and returns its id */
       newChat: (firstText?: string): string => {
@@ -80,7 +97,12 @@ function useAppStore() {
         patch((s) => ({ ...s, chats: [chat, ...s.chats] }));
         return id;
       },
-      addMessage: (chatId: string, from: 'me' | 'akaya', text: string) =>
+      addMessage: (
+        chatId: string,
+        from: 'me' | 'akaya',
+        text: string,
+        extra?: { attachments?: Attachment[]; modes?: ChatMode[] },
+      ) =>
         patch((s) => ({
           ...s,
           chats: s.chats
@@ -90,7 +112,7 @@ function useAppStore() {
                     ...c,
                     title: c.messages.length === 0 && from === 'me' ? chatTitle(text) : c.title,
                     updatedAt: Date.now(),
-                    messages: [...c.messages, newMsg(from, text)],
+                    messages: [...c.messages, { ...newMsg(from, text), ...extra }],
                   }
                 : c,
             )

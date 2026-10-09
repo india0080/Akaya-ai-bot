@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: Akaya Future Message service
+  version: 0.4.0
+  description: |
+    Schedule a message or post to be sent automatically on one or more channels at a chosen time.
+    Channels whose personal accounts have no official API (personal WhatsApp, Signal, SMS) are delivered
+    as a reminder push with a one-tap pre-filled send (status `needs-tap`). See docs/CHANNELS.md.
+servers:
+  - url: http://localhost:8789
+security:
+  - bearer: []
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  parameters:
+    UserId:
+      name: X-User-Id
+      in: header
+      required: true
+      schema: { type: string }
+      description: Set by your gateway after verifying the user's session.
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    ChannelId:
+      type: string
+      enum: [whatsapp, whatsapp-business, telegram, gmail, outlook, slack, teams, messenger, instagram-dm, signal, sms, discord, instagram, facebook, x, linkedin, youtube, tiktok, threads, pinterest]
+    Media:
+      type: object
+      required: [kind, url]
+      properties:
+        kind: { type: string, enum: [image, video] }
+        url: { type: string, format: uri, description: Public HTTPS URL (Meta/TikTok/Pinterest pull from it) }
+        mime: { type: string }
+        name: { type: string }
+    MessageInput:
+      type: object
+      required: [channels, to, sendAt]
+      properties:
+        channels: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ChannelId' } }
+        to: { type: string, description: Human recipient label, e.g. "Priya" }
+        targets:
+          type: object
+          description: Per-channel address (phone, chat_id, email, Slack channel id…). Falls back to `to`.
+          additionalProperties: { type: string }
+        subject: { type: string }
+        text: { type: string, default: '' }
+        media: { $ref: '#/components/schemas/Media' }
+        sendAt:
+          oneOf:
+            - { type: integer, description: epoch milliseconds }
+            - { type: string, format: date-time }
+        timezone: { type: string, default: Asia/Kolkata, description: IANA zone; repeats keep this wall-clock time }
+        repeat: { type: string, enum: [once, daily, weekly, monthly, yearly], default: once }
+    ChannelResult:
+      type: object
+      properties:
+        status: { type: string, enum: [pending, sent, failed, needs-tap, scheduled-native] }
+        attempts: { type: integer }
+        externalId: { type: string }
+        error: { type: string }
+        at: { type: integer }
+    Message:
+      allOf:
+        - $ref: '#/components/schemas/MessageInput'
+        - type: object
+          properties:
+            id: { type: string }
+            userId: { type: string }
+            status: { type: string, enum: [scheduled, sending, sent, partial, failed, needs-tap, cancelled] }
+            results: { type: object, additionalProperties: { $ref: '#/components/schemas/ChannelResult' } }
+            createdAt: { type: integer }
+            updatedAt: { type: integer }
+            repeatOf: { type: string }
+    Channel:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/ChannelId' }
+        label: { type: string }
+        kind: { type: string, enum: [chat, email, post] }
+        auto: { type: string, enum: [api, business, tap], description: 'api = fully automatic; business = needs a business/page account; tap = reminder + one-tap send' }
+        api: { type: string }
+        maxLen: { type: integer }
+        needsMedia: { type: string, enum: [video, any] }
+        limits: { type: string }
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+        issues: { type: array, items: {} }
+paths:
+  /healthz:
+    get:
+      security: []
+      responses: { '200': { description: OK } }
+  /v1/channels:
+    get:
+      security: []
+      summary: Channel capability matrix
+      responses:
+        '200':
+          description: Channels
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Channel' } } } }
+  /v1/messages:
+    parameters: [{ $ref: '#/components/parameters/UserId' }]
+    post:
+      summary: Schedule a message
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/MessageInput' } } } }
+      responses:
+        '201': { description: Scheduled, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '400': { description: Malformed input, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { description: Missing/invalid token }
+        '422': { description: Violates channel rules (length, media, time in past), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    get:
+      summary: List the user's messages
+      parameters: [{ name: status, in: query, schema: { type: string } }]
+      responses:
+        '200': { description: Messages, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/Message' } } } } }
+  /v1/messages/{id}:
+    parameters: [{ $ref: '#/components/parameters/UserId' }, { $ref: '#/components/parameters/Id' }]
+    get:
+      responses:
+        '200': { description: Message, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '404': { description: Not found }
+    patch:
+      summary: Edit a scheduled (not yet sent) message
+      requestBody: { content: { application/json: { schema: { $ref: '#/components/schemas/MessageInput' } } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+        '404': { description: Not found }
+        '422': { description: Invalid or no longer editable }
+    delete:
+      summary: Cancel (also cancels native Slack schedules)
+      responses:
+        '200': { description: Cancelled, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } }
+  /v1/messages/{id}/retry:
+    parameters: [{ $ref: '#/components/parameters/UserId' }, { $ref: '#/components/parameters/Id' }]
+    post:
+      summary: Retry failed channels now
+      responses: { '200': { description: Re-queued, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } } }
+  /v1/messages/{id}/send-now:
+    parameters: [{ $ref: '#/components/parameters/UserId' }, { $ref: '#/components/parameters/Id' }]
+    post:
+      summary: Send immediately instead of waiting
+      responses: { '200': { description: Queued for immediate send, content: { application/json: { schema: { $ref: '#/components/schemas/Message' } } } } }

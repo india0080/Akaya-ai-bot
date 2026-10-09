@@ -33,20 +33,66 @@ export interface Note {
   color: 'violet' | 'blue' | 'green' | 'orange' | 'pink';
 }
 
+export type FMStatus = 'scheduled' | 'sending' | 'sent' | 'failed' | 'needs-tap';
+export type FMRepeat = 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type FMResult = 'sent' | 'failed' | 'needs-tap';
+
+export interface FMMedia {
+  kind: 'image' | 'video';
+  name: string;
+  /** small JPEG data URL preview (video: first frame) */
+  thumb?: string;
+  size?: number;
+}
+
+/** A scheduled (auto-send) message or post. Fields after `createdAt` were added in v0.4 and are optional for old data. */
 export interface FutureMessage {
   id: string;
+  /** recipient, contact, or the account/page for posts */
   to: string;
   text: string;
+  /** epoch ms of the next send */
   when: number;
-  status: 'scheduled' | 'sent';
+  status: FMStatus;
   createdAt?: number;
+  /** Future Message channel ids (see future/channels.ts); default ['whatsapp'] */
+  channels?: string[];
+  subject?: string;
+  media?: FMMedia;
+  repeat?: FMRepeat;
+  /** IANA zone the user picked the time in */
+  tz?: string;
+  attempts?: number;
+  error?: string;
+  sentAt?: number;
+  /** per-channel outcome of the last attempt */
+  results?: Record<string, FMResult>;
 }
+
+export type AttachmentKind =
+  'image' | 'video' | 'file' | 'audio' | 'location' | 'contact' | 'app' | 'note' | 'scan' | 'screen' | 'generated';
+
+export interface Attachment {
+  id: string;
+  kind: AttachmentKind;
+  name: string;
+  mime?: string;
+  size?: number;
+  /** small preview (JPEG data URL) or tiny audio data URL */
+  thumb?: string;
+  /** extra line: coordinates, phone, duration, app id… */
+  meta?: string;
+}
+
+export type ChatMode = 'web' | 'deep' | 'image';
 
 export interface ChatMessage {
   id: string;
   from: 'me' | 'akaya';
   text: string;
   at: number;
+  attachments?: Attachment[];
+  modes?: ChatMode[];
 }
 
 export interface Chat {

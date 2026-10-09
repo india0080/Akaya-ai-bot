@@ -1,9 +1,9 @@
 # Akaya: mobile app prototype (React + TypeScript + Vite PWA)
 
 A clickable, installable prototype of the Akaya assistant app with **light and dark** themes.
-It covers Sign Up → 5-slide onboarding → Home (bento quick actions), Chat, Voice, History, More/Settings and the
+It covers Sign Up → 5-slide onboarding → Home (pearl + "Ask Akaya anything" chat pill), Chat (with a **+** attachment sheet), Voice, History, More/Settings and the
 feature screens (Translate, Future Message, Smart Note, Search, Upgrade, Support), plus **Apps & Integrations**
-(100 apps) and **Voice Notes** (live transcript → structured notes).
+(264 apps with real brand logos, India/Global filter), **Future Message** (scheduled auto-send queue) and **Voice Notes** (live transcript → structured notes).
 
 **Navigation:** a floating tab bar `Home | Chat | (Voice orb) | History | More`. The glowing centre orb
 (animated waveform) opens Voice. More holds settings.
@@ -171,12 +171,14 @@ src/
                         (Toggle, Segmented, RangeSlider), Icon, Logo, Avatar, ScreenHeader…
   auth/                 email auth: AuthProvider interface, Firebase + LocalDemo providers, validation
   native/               Capacitor glue: status bar, splash, Android back button stack
-  integrations/         Apps & Integrations: catalog (100 apps), provider interface, Mock/Composio/Nango providers
+  integrations/         Apps & Integrations: catalog (264 apps), brand logos (logos.generated.ts), provider interface, Mock/Composio/Nango providers
+  future/               Future Message: channels, time zones, simulated send engine, scheduler hook
+  chat/                 Chat attachment pickers (camera, photos, files, scan, location, contact, create image) and replies
   notes/                Voice Notes: modes, recorder (mic + speech), IndexedDB audio store, notes providers, export
   screens/
     Apps.tsx (+ apps/AppSheet.tsx), vnotes/ (VoiceNotes, Recorder, NoteView, NotePanels, MindMap),
-    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home (+ home/ Bento, TodayRow,
-    FeatureSlider, RecentChats), Chat, Voice, More, Translate, FutureMessages, Notes,
+    auth/ (EmailSignUpForm, Login, VerifyEmail, ForgotPassword), SignUp, Onboarding (+ onboarding/Slides.tsx), Home, Chat (+ chat/ AttachSheet, Attachments, useRecorder),
+    FutureMessages (+ future/ Composer, Preview), Voice, More, Translate, FutureMessages, Notes,
     Search, History (unified timeline), Upgrade, Support
     sheets/             bottom sheets: Notifications, Read Screen, Today, Agents, Explore, Loan
 ```
@@ -209,10 +211,12 @@ Tapping a card opens its source: a chat thread, the Today sheet, Notes or Future
 
 ## Apps & Integrations
 
-**Where:** More → *Apps & Integrations*, Home (*Your apps* row and the *Connect your apps* card), and Chat (**+** → *Apps*).
-The catalog has **100 apps** for Indian office users across 16 categories (Email, Messaging, Calendar, Notes & Docs, Storage,
-Productivity, CRM & Sales, Finance, Social, Shopping & Travel, Developer, Meetings, Forms, Support, HR, Automation),
-with search, category chips, a *Connected* row, a *Popular* grid and a grouped list. Each app has a detail sheet
+**Where:** More → *Apps & Integrations*, and Chat (**+** → *Apps*).
+The catalog has **264 apps** across 20 categories (Email, Messaging, Calendar, Notes & Docs, Storage, Productivity,
+CRM & Sales, Finance, Social, Shopping/Food & Travel, Commerce, Marketing, Publishing, Music & Media, Developer, Meetings,
+Forms, Support, HR, Automation). A **region filter** (All / 🇮🇳 India / Global, `?r=in|global`) sits above the category chips;
+India-only apps (DigiLocker, Razorpay, Swiggy, Zomato, Flipkart, Keka…) are tagged *India*, international ones (Shopify,
+Spotify, WeChat, LINE, KakaoTalk, Workday…) *Global*. Search matches name, description, category and region. It also has category chips, a *Connected* row, a *Popular* grid and a grouped list. Each app has a detail sheet
 (what Akaya can do, permissions, per-ability toggles, Disconnect) and a demo connect flow: consent → connecting → connected + toast.
 Connections persist in `state.integrations`, show on Home and in History (*Connected Notion*), and Chat answers sample questions about them.
 
@@ -251,11 +255,57 @@ and **Connector** (apps without a public OAuth API, e.g. Tally, Obsidian, Proton
   They break WhatsApp's terms and get numbers banned.
 - Slack, Zoom, Jira, HubSpot, Zoho, Razorpay and others follow the same backend OAuth pattern. Check each provider's app review process.
 
-### Logos
+### Logos and brand guidelines
 
-App tiles are **monogram placeholders** (letters on the brand colour) in `components/AppTile.tsx`, **not** official logos.
-Before release, replace them with official logo assets that you are permitted to use, following each brand's guidelines.
-App names and marks belong to their owners.
+App tiles show each app's **original brand mark on a white tile** (`components/AppTile.tsx`). Marks come only from
+permissively licensed open-source icon sets, generated by `npm run logos` (`scripts/gen-logos.mjs`) into
+`src/integrations/logos.generated.ts`, which is lazy-loaded as a separate chunk:
+
+| Source | Licence | Used for |
+|---|---|---|
+| `@iconify-json/logos` (gilbarbara/logos) | CC0-1.0 | full-colour marks (first choice) |
+| `@iconify-json/thesvg-color`, `thesvg` | MIT | full-colour marks |
+| `simple-icons` | CC0-1.0 | single-colour marks + official brand hex |
+| `@iconify-json/cib`, `vscode-icons`, `mdi` | CC0 / MIT / Apache-2.0 | a few fallbacks |
+
+Sets with non-commercial or share-alike licences (e.g. arcticons, cbi) are deliberately **not** used. `scripts/logo-map.json`
+pins specific icons per app (`"none"` forces the monogram), and `scripts/logo-report.json` lists the source of every logo
+and every app that fell back to a **monogram tile** (letters on the brand colour), currently 54 apps for which no permissive mark
+exists.
+
+**Brand guidelines:** the icon licences cover the SVG files, not the trademarks. App names and logos belong to their
+owners and are shown only to identify the service the user connects (nominative use), unmodified, on a neutral tile,
+never as Akaya's own branding and never implying endorsement. Before a public release, check each brand's guidelines
+(e.g. Google, Microsoft, Meta, Slack and WhatsApp brand pages); some require specific clear space, colours or approval
+for listing pages. Replace any mark with the vendor's official asset if their guidelines require it.
+
+## Home and Chat attachments
+
+- **Home** shows the pearl, the On-device/Online toggle, a *Floating* chip and a long chat pill (**+**, "Ask Akaya anything…",
+  mic). Tapping the pill animates the pearl into the chat header and opens Chat with the keyboard up (`/chat?focus=1`);
+  **+** opens the attachment sheet (`/chat?attach=menu`). The Floating bubble toggle also lives in More → Settings.
+- **Chat +** sheet: Camera, Photos, Files (PDF/DOCX/XLSX/PPTX/TXT/CSV), Scan (document filter), Screenshot / Read screen,
+  Voice note, Location, Contact, Apps, Smart Notes, Create image, Schedule, plus **Web search** and **Deep think** toggles.
+  Attachments become removable chips with thumbnails; sent messages show previews, and the (demo) reply names each file.
+- **Permissions (APK):** Camera via `@capacitor/camera` (the system camera, so no CAMERA permission is needed); location
+  (`ACCESS_COARSE/FINE_LOCATION`) via `@capacitor/geolocation`; microphone (`RECORD_AUDIO`) for voice notes;
+  notifications (`POST_NOTIFICATIONS`, exact alarms) via `@capacitor/local-notifications`. Each is requested at first use.
+- Demo limits: image understanding and replies are simulated; Contact uses the system picker where the browser supports it,
+  otherwise sample contacts; Read screen asks for a screenshot (no accessibility service); Create image draws a labelled sample.
+
+## Future Message (scheduled auto-send)
+
+Write once, pick channels by logo (WhatsApp, Telegram, Gmail, Outlook, Slack, Teams, Messenger, Signal, SMS, Instagram,
+Facebook, X, LinkedIn, YouTube, TikTok, Threads, Pinterest…), add recipient, text, photo/video, date and time,
+**repeat** (once / daily / weekly / monthly / birthday-yearly) and **time zone** (IST default), then preview per platform.
+The queue shows **Scheduled → Sending → Sent / Failed / Tap to send** with Send now, Edit, Cancel and Retry.
+
+- **In the app (demo mode):** sending is simulated on the device (`src/future/engine.ts`). Nothing is sent. A local
+  notification fires at the scheduled time (APK). Put `#fail` in the text to see a failure and the Retry flow.
+- **Real sending** is the backend service in [`services/future-message/`](../services/future-message/README.md)
+  (queue, per-channel adapters, OpenAPI, tests).
+- **Personal WhatsApp, Signal and SMS have no sending API.** For these, Akaya reminds you at the time and one tap opens the
+  app with the message pre-filled. Fully automatic WhatsApp needs a WhatsApp Business (Cloud API) number and approved templates.
 
 ## Voice Notes
 

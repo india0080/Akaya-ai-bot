@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Screen } from '../components/Screen';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -13,7 +13,16 @@ import {
   POPULAR,
   type CategoryId,
   type IntegrationApp,
+  type Region,
 } from '../integrations';
+
+const REGIONS: { id: 'all' | Region; label: string }[] = [
+  { id: 'all', label: 'All regions' },
+  { id: 'in', label: 'India' },
+  { id: 'global', label: 'Global' },
+];
+const regionTag = (a: IntegrationApp) =>
+  a.regions.length > 1 ? 'India · Global' : a.regions[0] === 'in' ? 'India' : 'Global';
 import { AppSheet, type Step } from './apps/AppSheet';
 import './Apps.css';
 
@@ -23,6 +32,8 @@ export function Apps() {
   const [params, setParams] = useSearchParams();
   const cat = (params.get('c') as CategoryId | null) ?? 'all';
   const q = params.get('q') ?? '';
+  const region = (params.get('r') as Region | null) ?? 'all';
+  const inRegion = (a: IntegrationApp) => region === 'all' || a.regions.includes(region as Region);
   const openId = params.get('app');
   const step = (params.get('step') as Step | null) ?? 'detail';
   const chipsRef = useRef<HTMLDivElement>(null);
@@ -53,15 +64,14 @@ export function Apps() {
     .map((c) => APP_BY_ID[c.appId])
     .filter(Boolean);
   const needle = q.trim().toLowerCase();
-  const list = useMemo(
-    () =>
-      APPS.filter(
-        (a) =>
-          (cat === 'all' || a.category === cat) &&
-          (!needle ||
-            `${a.name} ${a.desc} ${CATEGORIES.find((c) => c.id === a.category)?.label}`.toLowerCase().includes(needle)),
-      ),
-    [cat, needle],
+  const list = APPS.filter(
+    (a) =>
+      (cat === 'all' || a.category === cat) &&
+      (region === 'all' || a.regions.includes(region)) &&
+      (!needle ||
+        `${a.name} ${a.desc} ${CATEGORIES.find((c) => c.id === a.category)?.label} ${regionTag(a)}`
+          .toLowerCase()
+          .includes(needle)),
   );
   const browsing = cat === 'all' && !needle;
   const groups = browsing
@@ -80,6 +90,7 @@ export function Apps() {
               {app.kind !== 'oauth' && <em className={`ap-kind k-${app.kind}`}>{KIND_LABEL[app.kind]}</em>}
             </b>
             <small>{app.desc}</small>
+            <i className={`ap-reg r-${app.regions.length > 1 ? 'both' : app.regions[0]}`}>{regionTag(app)}</i>
           </span>
         </button>
         {on ? (
@@ -107,7 +118,7 @@ export function Apps() {
       <label className="ap-search">
         <Icon name="search" size={18} className="faint" />
         <input
-          placeholder="Search 100 apps: Notion, Gmail, Tally…"
+          placeholder={`Search ${APPS.length} apps: Notion, Gmail, Shopify…`}
           value={q}
           onChange={(e) => set('q', e.target.value)}
           aria-label="Search apps"
@@ -118,6 +129,24 @@ export function Apps() {
           </button>
         )}
       </label>
+      <div className="ap-region" role="radiogroup" aria-label="Region">
+        {REGIONS.map((r) => (
+          <button
+            key={r.id}
+            role="radio"
+            aria-checked={region === r.id}
+            className={region === r.id ? 'on' : ''}
+            onClick={() => set('r', r.id)}
+          >
+            {r.id === 'in' && <span className="flag" aria-hidden="true" />}
+            {r.id === 'global' && <Icon name="globe" size={13} />}
+            {r.label}
+            <small>
+              {r.id === 'all' ? APPS.length : APPS.filter((a) => a.regions.includes(r.id as Region)).length}
+            </small>
+          </button>
+        ))}
+      </div>
       <div className="ap-chips" ref={chipsRef} role="tablist" aria-label="Categories">
         {[{ id: 'all', label: 'All' }, ...CATEGORIES].map((c) => (
           <button
@@ -160,7 +189,7 @@ export function Apps() {
             <h3>Popular</h3>
           </div>
           <div className="ap-pop">
-            {POPULAR.map((app) => (
+            {POPULAR.filter(inRegion).map((app) => (
               <button key={app.id} className="ap-pi" onClick={() => set('app', app.id)}>
                 <span className="ap-pt">
                   <AppTile app={app} size={54} />
@@ -198,7 +227,10 @@ export function Apps() {
             </button>
           </div>
         )}
-        <p className="ap-foot">App names and marks belong to their owners. Tiles are placeholders.</p>
+        <p className="ap-foot">
+          App names and logos are trademarks of their owners, shown only to identify each integration. No endorsement
+          implied.
+        </p>
       </div>
 
       <AppSheet app={openId ? (APP_BY_ID[openId] ?? null) : null} initialStep={step} onClose={() => set('app', null)} />

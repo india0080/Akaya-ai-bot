@@ -10,7 +10,11 @@ export type CategoryId =
   | 'crm'
   | 'finance'
   | 'social'
-  | 'india'
+  | 'shopping'
+  | 'commerce'
+  | 'marketing'
+  | 'publishing'
+  | 'media'
   | 'dev'
   | 'meetings'
   | 'forms'
@@ -52,7 +56,11 @@ export interface IntegrationApp {
   /** human-readable permissions shown on the consent screen */
   permissions: string[];
   popular?: boolean;
+  /** where the app is relevant: India, Global, or both */
+  regions: Region[];
 }
+
+export type Region = 'in' | 'global';
 
 export interface Connection {
   appId: string;
