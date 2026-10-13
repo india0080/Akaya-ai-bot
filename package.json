@@ -5,6 +5,7 @@
   "description": "Akaya monorepo: app, agents, services and shared packages (npm workspaces).",
   "workspaces": [
     "packages/*",
+    "apps/*",
     "app",
     "agents/shopping-agent/backend",
     "agents/shopping-agent/frontend",

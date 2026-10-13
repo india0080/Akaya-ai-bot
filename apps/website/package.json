@@ -1,0 +1,37 @@
+{
+  "name": "@akaya/website",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Akaya marketing website: React + TS + Vite with static prerendering (SSG), SEO, blog and admin-ready content.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --outDir dist && vite build --ssr src/entry-server.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "preview": "vite preview --outDir dist",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "blog:new": "node scripts/blog-new.mjs",
+    "seo:lint": "node scripts/seo-lint.mjs",
+    "seo:check": "node scripts/seo-check.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
+    "import:voice-flow": "node scripts/import-voice-flow.mjs"
+  },
+  "dependencies": {
+    "@akaya/ui": "*",
+    "marked": "^15.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "yaml": "^2.6.0"
+  },
+  "devDependencies": {
+    "@akaya/config": "*",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.12.0",
+    "sharp": "*",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4"
+  }
+}
