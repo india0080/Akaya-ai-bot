@@ -86,6 +86,10 @@
 .v-mic:active {
   transform: scale(0.94);
 }
+.v-mic:disabled {
+  opacity: 0.85;
+  cursor: default;
+}
 .v-mic.on {
   animation: micpulse 1.4s ease-out infinite;
 }

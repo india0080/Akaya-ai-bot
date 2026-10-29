@@ -3,6 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Screen, Pearl, Icon, Segmented, useToast } from '@akaya/ui';
 import { Avatar } from '../components/Avatar';
+import { ScreenState } from '../components/ScreenState';
+import { requestMic } from '../lib/mic';
+import { useMicAccess } from '../lib/useMicAccess';
 import { useApp } from '../state/store';
 import { greeting } from '../lib/time';
 import { Bento } from './home/Bento';
@@ -42,6 +45,7 @@ interface Leave {
 
 export function Home() {
   const { state, setSetting } = useApp();
+  const mic = useMicAccess();
   const toast = useToast();
   const nav = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -204,14 +208,57 @@ export function Home() {
           <i className="h-pill-div" aria-hidden="true" />
           <span className="h-pill-ph">Ask Akaya anything…</span>
         </button>
-        <button className="h-pill-voice" aria-label="Talk to Akaya (Voice)" onClick={() => nav('/voice')}>
-          <span className="h-pill-wave" aria-hidden="true">
-            {[0.45, 0.8, 1, 0.65, 0.9, 0.5].map((h, i) => (
-              <i key={i} style={{ '--h': h, '--d': `${i * -0.14}s` } as CSSProperties} />
-            ))}
-          </span>
+        <button
+          className="h-pill-voice"
+          aria-label={mic === 'checking' ? 'Checking the microphone' : 'Talk to Akaya (Voice)'}
+          aria-busy={mic === 'checking'}
+          disabled={mic === 'checking'}
+          onClick={() => {
+            if (mic === 'ready' || mic === 'prompt') nav('/voice');
+          }}
+        >
+          {mic === 'checking' ? (
+            <span className="screen-state-spin light" />
+          ) : (
+            <span className="h-pill-wave" aria-hidden="true">
+              {[0.45, 0.8, 1, 0.65, 0.9, 0.5].map((h, i) => (
+                <i key={i} style={{ '--h': h, '--d': `${i * -0.14}s` } as CSSProperties} />
+              ))}
+            </span>
+          )}
         </button>
       </motion.div>
+
+      {(mic === 'denied' || mic === 'unsupported') && (
+        <ScreenState
+          className="h-mic-state"
+          icon={mic === 'unsupported' ? 'mic' : 'alert'}
+          title={mic === 'unsupported' ? 'Microphone isn’t available' : 'Microphone is blocked'}
+          body={
+            mic === 'unsupported'
+              ? 'This browser or device has no microphone. You can still ask Akaya by typing.'
+              : 'Voice is off until Akaya is allowed to use the microphone. You can still type, or try again after changing the setting.'
+          }
+        >
+          <div className="screen-state-actions">
+            <button className="btn btn-ghost btn-sm" onClick={() => openChat()}>
+              Type instead
+            </button>
+            {mic === 'denied' && (
+              <button
+                className="btn btn-brand btn-sm"
+                onClick={() => {
+                  void requestMic().then((next) => {
+                    if (next === 'ready') nav('/voice');
+                  });
+                }}
+              >
+                Try again
+              </button>
+            )}
+          </div>
+        </ScreenState>
+      )}
 
       <Bento onReadScreen={() => open('read')} />
 
