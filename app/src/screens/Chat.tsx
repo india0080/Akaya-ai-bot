@@ -8,6 +8,9 @@ import { mockReply } from '../lib/mock';
 import { fmtTime, uid } from '../lib/time';
 import { speak } from '../lib/speech';
 import { AppTile } from '../components/AppTile';
+import { ScreenState } from '../components/ScreenState';
+import { requestMic, type MicBlock } from '../lib/mic';
+import { useMicAccess } from '../lib/useMicAccess';
 import { APP_BY_ID } from '../integrations/catalog';
 import type { Attachment, ChatMode } from '../state/types';
 import {
@@ -50,8 +53,11 @@ export function Chat() {
   const { state, newChat, addMessage } = useApp();
   const reminders = useReminders();
   const chat = id ? state.chats.find((c) => c.id === id) : undefined;
+  const access = useMicAccess();
+  const [micNote, setMicNote] = useState<MicBlock | null>(null);
   const [text, setText] = useState('');
   const [typing, setTyping] = useState(false);
+  const [booting, setBooting] = useState(() => !!params.get('q'));
   const [atts, setAtts] = useState<Attachment[]>([]);
   const [modes, setModes] = useState<ChatMode[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -84,7 +90,10 @@ export function Chat() {
 
   const send = (raw: string) => {
     const msg = raw.trim();
-    if ((!msg && !atts.length) || typing) return;
+    if ((!msg && !atts.length) || typing) {
+      setBooting(false);
+      return;
+    }
     let cid = chat?.id;
     const title = msg || atts[0]?.name || 'Attachment';
     if (!cid) {
@@ -178,11 +187,12 @@ export function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const msgs = chat?.messages ?? [];
+  const showBoot = booting && !msgs.length;
+
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' });
   }, [chat?.messages.length, typing]);
-
-  const msgs = chat?.messages ?? [];
   const canSend = !!text.trim() || atts.length > 0;
   return (
     <main className="screen chat-screen">
@@ -214,7 +224,23 @@ export function Chat() {
       </header>
 
       <div className="chat-list" ref={listRef}>
-        {!msgs.length && (
+        {id && !chat ? (
+          <ScreenState
+            className="chat-mic-state"
+            icon="chat"
+            tone="violet"
+            title="This chat isn’t here"
+            body="It isn’t on this device. Start a new one and Akaya will keep it on this phone."
+          >
+            <div className="screen-state-actions">
+              <button className="btn btn-brand btn-sm" onClick={() => nav('/chat')}>
+                New chat
+              </button>
+            </div>
+          </ScreenState>
+        ) : showBoot ? (
+          <ScreenState className="chat-mic-state" busy title="Sending that to Akaya…" body="The reply will show up in this chat." />
+        ) : !msgs.length && (
           <motion.div
             className="chat-empty"
             initial={{ opacity: 0, y: fromHome ? 24 : 10 }}
@@ -270,8 +296,8 @@ export function Chat() {
             </motion.div>
           ))}
         </AnimatePresence>
-        {typing && (
-          <div className="msg akaya">
+        {typing && msgs.length > 0 && (
+          <div className="msg akaya" role="status" aria-label="Akaya is thinking">
             <div className="msg-bub typing">
               <i />
               <i />
@@ -288,9 +314,51 @@ export function Chat() {
         transition={{ type: 'spring', stiffness: 360, damping: 30 }}
       >
         {busy && (
-          <div className="ax-busy">
+          <div className="ax-busy" role="status">
             <i className="fm-spin" /> {busy}
           </div>
+        )}
+        {(rec.block || micNote) && (
+          <ScreenState
+            className="chat-mic-state"
+            icon={(rec.block ?? micNote) === 'unsupported' ? 'mic' : 'alert'}
+            title={(rec.block ?? micNote) === 'unsupported' ? 'Microphone isn’t available' : 'Microphone is blocked'}
+            body={
+              (rec.block ?? micNote) === 'unsupported'
+                ? 'This browser or device has no microphone, so voice notes and Voice chat can’t start. You can still type.'
+                : 'Allow the microphone for Akaya in your browser or system settings, then try again. You can keep typing in the meantime.'
+            }
+          >
+            <div className="screen-state-actions">
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => {
+                  rec.clearBlock();
+                  setMicNote(null);
+                  focusInput();
+                }}
+              >
+                Type instead
+              </button>
+              {(rec.block ?? micNote) === 'denied' && (
+                <button
+                  className="btn btn-brand btn-sm"
+                  onClick={() => {
+                    void (async () => {
+                      const next = await requestMic();
+                      if (next === 'ready') {
+                        rec.clearBlock();
+                        setMicNote(null);
+                        nav('/voice');
+                      } else setMicNote(next);
+                    })();
+                  }}
+                >
+                  Try again
+                </button>
+              )}
+            </div>
+          </ScreenState>
         )}
         <ComposerChips
           items={atts}
@@ -339,8 +407,21 @@ export function Chat() {
                 <Icon name="send" size={18} />
               </button>
             ) : (
-              <button className="comp-mic" onClick={() => nav('/voice')} aria-label="Talk instead">
-                <Icon name="mic" size={19} />
+              <button
+                className="comp-mic"
+                onClick={() => {
+                  if (access === 'checking') return;
+                  if (access === 'denied' || access === 'unsupported') {
+                    setMicNote(access);
+                    return;
+                  }
+                  nav('/voice');
+                }}
+                disabled={access === 'checking'}
+                aria-busy={access === 'checking'}
+                aria-label={access === 'checking' ? 'Checking the microphone' : 'Talk instead'}
+              >
+                {access === 'checking' ? <span className="screen-state-spin" /> : <Icon name="mic" size={19} />}
               </button>
             )}
           </div>

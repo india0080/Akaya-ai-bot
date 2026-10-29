@@ -2,14 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Screen, Pearl, type Mood, Icon } from '@akaya/ui';
+import { ScreenState } from '../components/ScreenState';
 import { useApp } from '../state/store';
 import { mockReply } from '../lib/mock';
+import { classifyMicError, micCaptureSupported, speechRecognitionSupported } from '../lib/mic';
+import { useMicAccess } from '../lib/useMicAccess';
 import { createRecognizer, speak, stopSpeaking, type SpeechRec } from '../lib/speech';
 import { draftFromText, isReminderRequest, reminderReply, useReminders } from '../features/reminders';
 import './Voice.css';
 
-type Phase = 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied';
+type Phase = 'checking' | 'arming' | 'idle' | 'listening' | 'thinking' | 'speaking' | 'denied' | 'unsupported';
 const DEMO_LINE = 'Remind me to call Rahul at 5 PM';
+const TRY_LINES = ['Remind me to call Rahul at 5', "What's on today?", 'Translate thank you to Hindi'];
 const LANG_CODE: Record<string, string> = {
   English: 'en-IN',
   Hindi: 'hi-IN',
@@ -26,7 +30,16 @@ export function Voice() {
   const { state, logActivity } = useApp();
   const reminders = useReminders();
   const nav = useNavigate();
-  const [phase, setPhase] = useState<Phase>('idle');
+  const access = useMicAccess();
+  const [turn, setTurn] = useState<Phase>('idle');
+  const phase: Phase =
+    turn === 'listening' || turn === 'thinking' || turn === 'speaking' || turn === 'arming'
+      ? turn
+      : turn === 'denied' || turn === 'unsupported'
+        ? turn
+        : access === 'checking' || access === 'denied' || access === 'unsupported'
+          ? access
+          : 'idle';
   const [transcript, setTranscript] = useState('');
   const [reply, setReply] = useState('');
   const [demo, setDemo] = useState(false);
@@ -74,9 +87,9 @@ export function Voice() {
     loop();
   };
 
-  const startDemo = () => {
+  const startDemo = (line = DEMO_LINE) => {
     setDemo(true);
-    setPhase('listening');
+    setTurn('listening');
     setTranscript('');
     setReply('');
     let t = 0;
@@ -87,7 +100,7 @@ export function Voice() {
       media.current.raf = requestAnimationFrame(tick);
     };
     tick();
-    const words = DEMO_LINE.split(' ');
+    const words = line.split(' ');
     media.current.demoT = words.map((_, i) =>
       window.setTimeout(
         () => {
@@ -105,10 +118,11 @@ export function Voice() {
     setTranscript('');
     setReply('');
     transcriptRef.current = '';
-    if (!navigator.mediaDevices?.getUserMedia) {
-      setPhase('denied');
+    if (!micCaptureSupported()) {
+      setTurn('unsupported');
       return;
     }
+    setTurn('arming');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -119,7 +133,7 @@ export function Voice() {
       ctx.createMediaStreamSource(stream).connect(analyser);
       media.current = { stream, ctx };
       setDemo(false);
-      setPhase('listening');
+      setTurn('listening');
       meter(analyser);
       const rec = createRecognizer(LANG_CODE[state.settings.language] ?? 'en-IN');
       if (rec) {
@@ -137,8 +151,8 @@ export function Voice() {
         }
         media.current.rec = rec;
       }
-    } catch {
-      setPhase('denied');
+    } catch (error) {
+      setTurn(classifyMicError(error));
     }
   };
 
@@ -146,7 +160,7 @@ export function Voice() {
     const heard = transcriptRef.current.trim();
     cleanup();
     setBars(Array(24).fill(0.08));
-    setPhase('thinking');
+    setTurn('thinking');
     window.setTimeout(async () => {
       const q = heard || 'Hello';
       let r = heard ? mockReply(q, state.settings.mode) : "I didn't catch that. Try again, or tap a suggestion below.";
@@ -157,22 +171,35 @@ export function Voice() {
       }
       if (heard) logActivity({ kind: 'voice', title: 'Voice Chat', input: heard, output: r });
       setReply(r);
-      setPhase('speaking');
+      setTurn('speaking');
       speak(r, state.settings.voiceSpeed, /[\u0900-\u097F]/.test(r) ? 'hi-IN' : 'en-IN', () =>
-        setPhase((p) => (p === 'speaking' ? 'idle' : p)),
+        setTurn((p) => (p === 'speaking' ? 'idle' : p)),
       );
     }, 900);
   };
 
   const mood: Mood =
-    phase === 'listening' ? 'listening' : phase === 'thinking' ? 'thinking' : phase === 'speaking' ? 'happy' : 'idle';
+    phase === 'listening'
+      ? 'listening'
+      : phase === 'thinking' || phase === 'checking' || phase === 'arming'
+        ? 'thinking'
+        : phase === 'speaking'
+          ? 'happy'
+          : phase === 'denied' || phase === 'unsupported'
+            ? 'sleeping'
+            : 'idle';
   const status = {
+    checking: 'Checking the microphone…',
+    arming: 'Turning the microphone on…',
     idle: 'Tap the mic and just speak',
     listening: demo ? 'Listening… (demo)' : 'Listening…',
     thinking: 'Thinking…',
     speaking: 'Akaya says',
     denied: 'Microphone is blocked',
+    unsupported: 'Microphone isn’t available',
   }[phase];
+  const captions = speechRecognitionSupported();
+  const micBusy = phase === 'checking' || phase === 'arming';
 
   return (
     <Screen className="voice">
@@ -206,22 +233,59 @@ export function Voice() {
       <div className="v-status">{status}</div>
       <div className="v-text">
         <AnimatePresence mode="wait">
-          {phase === 'denied' ? (
-            <motion.div key="d" className="card v-denied" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <p>Allow microphone access in your browser settings to talk to Akaya. You can also try a demo.</p>
-              <div className="v-row">
-                <button className="btn btn-ghost btn-sm" onClick={start}>
-                  Try again
-                </button>
-                <button className="btn btn-brand btn-sm" onClick={startDemo}>
-                  Demo mode
-                </button>
-              </div>
+          {phase === 'denied' || phase === 'unsupported' ? (
+            <motion.div key={phase} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <ScreenState
+                icon={phase === 'unsupported' ? 'mic' : 'alert'}
+                body={
+                  phase === 'unsupported'
+                    ? 'This browser or device has no microphone Akaya can use. Type in Chat, or play a demo of a voice reminder.'
+                    : 'Akaya is not allowed to use the microphone. Turn it on in your browser or system settings, then try again. You can also type, or play a demo.'
+                }
+              >
+                <div className="screen-state-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => nav('/chat')}>
+                    Type instead
+                  </button>
+                  {phase === 'denied' && (
+                    <button className="btn btn-ghost btn-sm" onClick={start}>
+                      Try again
+                    </button>
+                  )}
+                  <button className="btn btn-brand btn-sm" onClick={() => startDemo()}>
+                    Demo mode
+                  </button>
+                </div>
+              </ScreenState>
+            </motion.div>
+          ) : phase === 'checking' || phase === 'arming' ? (
+            <motion.div key={phase} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <ScreenState busy body="Hang on while Akaya connects to the microphone." />
             </motion.div>
           ) : reply && phase !== 'listening' ? (
             <motion.p key="r" className="v-reply" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
               {phase === 'thinking' ? '' : reply}
             </motion.p>
+          ) : !transcript && phase !== 'listening' ? (
+            <motion.div key="empty" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <ScreenState
+                icon="mic"
+                tone="violet"
+                body={
+                  captions
+                    ? 'Nothing heard yet. Tap the mic, or play a sample line.'
+                    : 'Nothing heard yet. This browser has no live captions, so Demo mode is the way to preview Voice.'
+                }
+              >
+                <div className="screen-state-chips">
+                  {TRY_LINES.map((line) => (
+                    <button key={line} className="card" onClick={() => startDemo(line)}>
+                      {line}
+                    </button>
+                  ))}
+                </div>
+              </ScreenState>
+            </motion.div>
           ) : (
             <motion.p
               key="t"
@@ -229,11 +293,7 @@ export function Voice() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              {transcript
-                ? `“${transcript}”`
-                : phase === 'listening'
-                  ? 'Go ahead, I’m listening'
-                  : 'Try: “Remind me to call Rahul at 5”'}
+              {transcript ? `“${transcript}”` : 'Go ahead, I’m listening'}
             </motion.p>
           )}
         </AnimatePresence>
@@ -250,11 +310,17 @@ export function Voice() {
         <button
           className={`v-mic${phase === 'listening' ? ' on' : ''}`}
           onClick={() => (phase === 'listening' ? stop() : start())}
-          aria-label={phase === 'listening' ? 'Stop listening' : 'Start listening'}
+          disabled={micBusy}
+          aria-busy={micBusy}
+          aria-label={phase === 'listening' ? 'Stop listening' : micBusy ? status : 'Start listening'}
         >
-          <Icon name={phase === 'listening' ? 'stop' : 'mic'} size={30} strokeWidth={2.2} />
+          {micBusy ? (
+            <span className="screen-state-spin light" />
+          ) : (
+            <Icon name={phase === 'listening' ? 'stop' : 'mic'} size={30} strokeWidth={2.2} />
+          )}
         </button>
-        <button className="icon-btn card" onClick={startDemo} aria-label="Demo" title="Demo mode">
+        <button className="icon-btn card" onClick={() => startDemo()} aria-label="Demo" title="Demo mode">
           <Icon name="spark" size={18} />
         </button>
       </div>

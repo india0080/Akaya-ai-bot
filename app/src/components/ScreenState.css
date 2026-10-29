@@ -1,0 +1,86 @@
+/* Shared empty / loading / blocked panel. Same card language as Voice Notes errors and Apps empty search. */
+.screen-state {
+  margin: 4px 0 0;
+  padding: 16px 14px 14px;
+  border-radius: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.screen-state b {
+  font-family: var(--font-head);
+  font-size: 0.98rem;
+  letter-spacing: -0.02em;
+}
+.screen-state p {
+  margin: 0;
+  max-width: 32ch;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+.screen-state-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--tint-orange);
+  color: var(--orange);
+  margin-bottom: 2px;
+}
+.screen-state-ic.tone-violet {
+  background: var(--tint-violet);
+  color: var(--violet);
+}
+.screen-state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+  width: 100%;
+}
+.screen-state-spin {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--line-strong);
+  border-top-color: var(--violet);
+  animation: screen-state-spin 0.8s linear infinite;
+}
+.screen-state-spin.light {
+  width: 26px;
+  height: 26px;
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+@keyframes screen-state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.screen-state-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.screen-state-chips button {
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.h-mic-state {
+  margin: 0 18px 8px;
+}
+.chat-mic-state {
+  margin: 0 0 8px;
+}
+.rc-empty {
+  margin: 0;
+}

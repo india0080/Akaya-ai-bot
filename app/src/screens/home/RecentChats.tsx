@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Icon, type IconName } from '@akaya/ui';
+import { ScreenState } from '../../components/ScreenState';
 import { useApp } from '../../state/store';
 import { relDay } from '../../lib/time';
 
@@ -14,7 +15,22 @@ export function RecentChats() {
   const { state } = useApp();
   const nav = useNavigate();
   const chats = state.chats.filter((c) => c.messages.length).slice(0, 3);
-  if (!chats.length) return <div className="card list empty">No chats yet. Say hi to Akaya!</div>;
+  if (!chats.length)
+    return (
+      <ScreenState
+        className="rc-empty"
+        icon="chat"
+        tone="violet"
+        title="No chats yet"
+        body="Say hi to Akaya. Your latest conversations will show up here."
+      >
+        <div className="screen-state-actions">
+          <button className="btn btn-brand btn-sm" onClick={() => nav('/chat')}>
+            Start a chat
+          </button>
+        </div>
+      </ScreenState>
+    );
   return (
     <div className="card list">
       {chats.map((c) => {

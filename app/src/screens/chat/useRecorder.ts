@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { classifyMicError, micCaptureSupported, type MicBlock } from '../../lib/mic';
 import { uid } from '../../lib/time';
 import type { Attachment } from '../../state/types';
 
@@ -7,6 +8,7 @@ const MAX_INLINE = 450 * 1024; // keep short notes playable from localStorage
 /** Minimal voice-note recorder (MediaRecorder). The APK asks for the microphone permission. */
 export function useRecorder(onDone: (a: Attachment) => void, onError: (msg: string) => void) {
   const [secs, setSecs] = useState<number | null>(null);
+  const [block, setBlock] = useState<MicBlock | null>(null);
   const rec = useRef<MediaRecorder | null>(null);
   const timer = useRef(0);
   const started = useRef(0);
@@ -25,8 +27,13 @@ export function useRecorder(onDone: (a: Attachment) => void, onError: (msg: stri
   );
 
   const start = async () => {
+    if (!micCaptureSupported() || typeof MediaRecorder === 'undefined') {
+      setBlock('unsupported');
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setBlock(null);
       const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'].find((m) =>
         MediaRecorder.isTypeSupported?.(m),
       );
@@ -63,13 +70,19 @@ export function useRecorder(onDone: (a: Attachment) => void, onError: (msg: stri
       r.start();
       setSecs(0);
       timer.current = window.setInterval(() => setSecs(Math.round((Date.now() - started.current) / 1000)), 250);
-    } catch {
-      cbs.current.onError('Microphone permission is needed for voice notes.');
+    } catch (error) {
+      const kind = classifyMicError(error);
+      setBlock(kind);
+      cbs.current.onError(
+        kind === 'unsupported'
+          ? 'This device has no microphone for voice notes.'
+          : 'Microphone permission is needed for voice notes.',
+      );
     }
   };
   const stop = (save = true) => {
     keep.current = save;
     if (rec.current?.state === 'recording') rec.current.stop();
   };
-  return { recording: secs !== null, secs: secs ?? 0, start, stop };
+  return { recording: secs !== null, secs: secs ?? 0, start, stop, block, clearBlock: () => setBlock(null) };
 }
