@@ -1,5 +1,6 @@
 # Docs index
 
+- [WEBSITE-CONSOLIDATION.md](WEBSITE-CONSOLIDATION.md): which marketing site is the source of truth (apps/website, akaya-voice-flow, akaya-core-os)
 - [ARCHITECTURE.md](ARCHITECTURE.md): how the app, the agents and the bubble system fit together
 - [AFFILIATE.md](AFFILIATE.md): deep links, affiliate programmes, sign-up, programme rules, FTC/ASCI disclosure, env vars
 - Shared packages: [affiliate](../packages/affiliate/README.md) · [reminders](../packages/reminders/README.md) ·
